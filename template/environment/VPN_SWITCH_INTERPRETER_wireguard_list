@@ -1,0 +1,19 @@
+cat
+# Interpreter for 'vpn-switch wireguard list' command
+# Terminal function that outputs listing of configs and categories directly to user
+#
+# Default value: "cat"
+#   Outputs directory listing directly to stdout (no execution needed)
+#   Shows configuration files and category directories
+#
+# This is a terminal/display function - it should NOT execute commands.
+# Use 'cat' to send output directly to the user without interpretation.
+#
+# Example output:
+#   === WireGuard Configurations ===
+#   Configuration files:
+#   wg-US-123.conf
+#   wg-UK-456.conf
+#   Categories:
+#   privacy
+#   streaming

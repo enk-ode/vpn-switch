@@ -1,0 +1,22 @@
+sh
+# Interpreter for 'vpn-switch session remove <PID>' command
+# Terminal function that generates shell commands to remove session directory
+#
+# Default value: "sh"
+#   Executes commands to remove .session/<PID>/ directory and contents
+#   Includes safety check: refuses to remove if process still alive
+#
+# Removal is permanent - session metadata cannot be recovered.
+# Use 'session remove' to clean up stale sessions (dead processes).
+#
+# Safety features:
+#   - Validates session exists before removal
+#   - Checks if process alive (kill -0)
+#   - Refuses removal if process still running
+#
+# Example usage:
+#   vpn-switch session remove 12345  # Remove stale session
+#
+# Advanced - dry-run mode:
+#   echo "cat" > .env/local/VPN_SWITCH_INTERPRETER_session_remove
+#   vpn-switch session remove 12345  # Preview commands without executing

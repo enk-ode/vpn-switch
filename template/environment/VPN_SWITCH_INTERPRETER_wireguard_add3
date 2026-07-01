@@ -1,0 +1,14 @@
+sh
+# Interpreter for 'vpn-switch wireguard add <category> <target> <alias>' command
+# Terminal function (_wireguard_add3) that creates symlinks in categories
+#
+# Default value: "sh"
+#   Executes shell commands output by _wireguard_add3
+#
+# Function behavior:
+#   Validates category directory exists
+#   Validates target config exists
+#   Creates symlink: ln -s "$target" "$VPN_SWITCH_BASE/wireguard/$category/$alias"
+#
+# This is part of a HETEROGENEOUS family (mixed terminal/combinator functions).
+# See VPN_SWITCH_INTERPRETER_wireguard_add for family-level documentation.

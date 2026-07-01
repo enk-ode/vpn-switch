@@ -1,0 +1,19 @@
+head -n1 | xargs sh -c '[ "$0" = "--" ] || set -- "$0" "$@"; eval "p=$1"; shift; exec "$p" "$@"' --
+# Interpreter for 'vpn-switch openvpn add <group> <target>' command
+# Combinator function (__openvpn_add2) that delegates to add3
+#
+# Default value: "head -n1 | xargs sh -c 'eval exec \"$0\" \"$@\"' --"
+#   This is the standard combinator interpreter (see VPN_SWITCH_COMBINATOR_INTERPRETER)
+#   Recursively dispatches the output command through vpn-switch.sh
+#
+# Function behavior:
+#   Validates group and target exist
+#   Derives alias from target (removes .ovpn extension)
+#   Delegates to add3: "$VPN_SWITCH_CONTEXT_SCRIPT" openvpn add "$group" "$target" "$alias"
+#
+# CRITICAL: This is a COMBINATOR function (__ prefix) in a HETEROGENEOUS family.
+# It outputs a vpn-switch command, NOT shell commands.
+# Using 'sh' interpreter here will BREAK this function.
+#
+# This is part of a HETEROGENEOUS family (mixed terminal/combinator functions).
+# See VPN_SWITCH_INTERPRETER_wireguard_add for family-level documentation pattern.

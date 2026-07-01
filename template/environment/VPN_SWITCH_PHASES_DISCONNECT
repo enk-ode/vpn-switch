@@ -1,0 +1,24 @@
+dns vpn firewall
+# Disconnection phases to execute (space-separated list).
+#
+# Phases are executed in order during VPN disconnection. Typically
+# the reverse of PHASES_CONNECT to cleanly undo connection setup.
+#
+# Built-in phases:
+#   dns      - Restore original DNS configuration
+#   vpn      - Bring down VPN interface (protocol-specific)
+#   firewall - Clean up packet filter (PF) tables
+#
+# The order matters! DNS should be restored before VPN teardown,
+# and firewall cleanup should happen last.
+#
+# Phase resolution follows same rules as PHASES_CONNECT but uses
+# "_down" suffix instead of "_up" suffix.
+#
+# Example custom phase for disconnect:
+#   ${VPN_SWITCH_BASE}/.include/phase/custom_routing_down.sh
+#
+# Usage:
+#   - Phases execute in specified order
+#   - Each phase outputs shell commands for disconnect.sh
+#   - Customize by editing .env/local/VPN_SWITCH_PHASES_DISCONNECT

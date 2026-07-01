@@ -1,0 +1,24 @@
+sh
+# Interpreter for 'vpn-switch unsetenv <var>' command
+# Terminal function that removes environment variable from .env/local/
+#
+# Default value: "sh"
+#   Executes commands to remove variable from .env/local/ hierarchy
+#   Only removes from local overrides, never touches default or templates
+#   Shows informative message if variable not set locally
+#
+# Function behavior:
+#   - Checks if variable exists in .env/local/
+#   - Removes file if found
+#   - Shows confirmation message
+#   - Variable falls back to default/template after unset
+#
+# Example usage:
+#   vpn-switch unsetenv VPN_SWITCH_DISPLAY_ANSI
+#   vpn-switch unsetenv VPN_SWITCH_INTERPRETER_wireguard_connect
+#
+# Advanced - show commands without executing (for debugging):
+#   echo "cat" > .env/local/VPN_SWITCH_INTERPRETER_unsetenv
+#   vpn-switch unsetenv TEST_VAR              # Show commands only
+#
+# See ARCHITECTURE.md for details on the environment hierarchy system

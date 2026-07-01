@@ -1,0 +1,19 @@
+cat
+# Interpreter for _openvpn_dump0 - OpenVPN protocol database dump
+#
+# The openvpn dump function generates executable shell commands for recreating
+# OpenVPN configs, categories, and links. It produces output for capture/piping.
+#
+# Type: Non-terminal function (produces data for consumption by other commands)
+# Default: cat (output to stdout for capture/piping)
+#
+# Usage:
+#   vpn-switch openvpn dump > openvpn-backup.sh  # Save OpenVPN-only dump
+#   vpn-switch dump > full-backup.sh                 # Full dump (calls openvpn dump)
+#
+# Override examples:
+#   VPN_SWITCH_INTERPRETER_openvpn_dump=tee /tmp/ovpn-dump.log  # Output and log
+#   VPN_SWITCH_INTERPRETER_openvpn_dump=cat  # Default (explicit)
+#
+# Note: This is called by _dump0, which handles the prologue/epilogue.
+# The openvpn dump focuses only on protocol-specific commands.

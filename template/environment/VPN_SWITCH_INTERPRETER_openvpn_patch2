@@ -1,0 +1,8 @@
+sh
+# Interpreter for _openvpn_patch2 - Config patching
+#
+# This function patches config files (removes up/down hook scripts).
+# It MUST execute to copy and modify the config file, so interpreter is always 'sh'.
+#
+# This is included in the minimal profile because config patching is a core
+# operation that must work in all configurations.

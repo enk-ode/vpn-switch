@@ -1,0 +1,4 @@
+cut -b3-
+# Interpreter for session enumerate command
+# Display-only: outputs named sessions as comments
+# Uses cut -b3- to strip the leading '# ' comment marker from each line

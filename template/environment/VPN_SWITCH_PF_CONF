@@ -1,0 +1,6 @@
+/etc/pf.conf
+# Main PF (Packet Filter) configuration file
+# Used when reloading firewall rules with: pfctl -f
+#
+# Default: /etc/pf.conf (standard location)
+# Adjust to match your system's pf configuration

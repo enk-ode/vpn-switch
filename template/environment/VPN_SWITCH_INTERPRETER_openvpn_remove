@@ -1,0 +1,6 @@
+sh
+# Interpreter for 'vpn-switch openvpn remove' command family
+#
+# Executes file system operations for removing OpenVPN configs and links.
+#
+# Default: sh (execute commands)

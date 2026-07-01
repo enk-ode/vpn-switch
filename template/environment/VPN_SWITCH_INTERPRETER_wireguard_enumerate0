@@ -1,0 +1,24 @@
+sudo sh | cut -b3-
+# Interpreter for 'vpn-switch wireguard enumerate' command
+# Terminal function that examines running WireGuard processes
+#
+# Default value: "sh"
+#   Generates and executes shell code to examine process table
+#   May require elevated privileges (sudo/doas) to see root processes
+#   Function generates shell code at generation time
+#   Shell code executes at execution time
+#
+# Function behavior:
+#   - Searches process table for wg-quick processes
+#   - Identifies managed vs unmanaged processes
+#   - Detects interface conflicts
+#   - Outputs diagnostic information as comments
+#
+# Example usage:
+#   vpn-switch wireguard enumerate
+#
+# To see processes running as root, set interpreter to:
+#   vpn-switch setenv VPN_SWITCH_INTERPRETER_wireguard_enumerate0 "sudo sh"
+#   # or: vpn-switch setenv VPN_SWITCH_INTERPRETER_wireguard_enumerate0 "doas sh"
+#
+# See ARCHITECTURE.md for details on terminal function pattern

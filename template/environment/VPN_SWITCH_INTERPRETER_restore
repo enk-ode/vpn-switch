@@ -1,0 +1,38 @@
+sh
+# Interpreter for _restore1 - Database restoration wrapper
+#
+# The restore function is a high-level wrapper that orchestrates database restoration
+# from dump files. It performs two critical steps:
+#   1. Calls init to create database structure (.env/local/ directories)
+#   2. Delegates to batch with keep-going mode for fault-tolerant execution
+#
+# Arguments:
+#   $1 - filepath to dump script
+#
+# Type: Combinator function (outputs commands to be executed)
+# Default: sh (execute the init and batch commands)
+#
+# Execution flow:
+#   restore → init (creates structure) → batch (processes dump with keep-going mode)
+#
+# Why keep-going mode?
+#   Restore uses keep-going mode to handle duplicate imports gracefully.
+#   If a config already exists, import fails but restore continues with
+#   remaining commands (categories, links, sessions).
+#
+# Usage:
+#   vpn-switch dump > backup.sh
+#   vpn-switch restore backup.sh            # Full restoration
+#
+#   env VPN_SWITCH_BASE=/DEST vpn-switch restore /path/to/backup.sh  # Cross-database restore
+#
+# Override examples:
+#   VPN_SWITCH_INTERPRETER_restore=sh       # Default (execute init and batch commands)
+#   VPN_SWITCH_INTERPRETER_restore=cat      # Dry-run (show commands without executing)
+#
+# Important notes:
+#   - Takes filepath argument instead of reading from stdin
+#   - Always calls init first (required for .env/local/ export statements)
+#   - init must run with proper interpreter (sh for execution, not cat)
+#   - Path resolution: Uses $VPN_SWITCH_CONTEXT_SCRIPT for absolute path to vpn-switch.sh
+#   - Environment isolation: init and batch run in separate subprocess contexts

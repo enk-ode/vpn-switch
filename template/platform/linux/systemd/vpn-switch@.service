@@ -1,0 +1,32 @@
+[Unit]
+Description=vpn-switch session %i
+Documentation=man:vpn-switch(1)
+Documentation=file:///usr/local/share/doc/vpn-switch/TUTORIAL_SESSIONS.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+# Type=oneshot: vpn-switch session start/stop run to completion.
+# The actual VPN process (wg-quick/openvpn) is detached and lives
+# independently of this unit; vpn-switch.sh manages it via the session
+# directory.
+Type=oneshot
+RemainAfterExit=yes
+
+# Customise per-instance via 'sudo systemctl edit vpn-switch@<name>'
+# (creates a drop-in override in /etc/systemd/system/vpn-switch@<name>.service.d/).
+# At minimum, set User= to the account that owns the vpn-switch database
+# and VPN_SWITCH_BASE= to that database's path. Example drop-in:
+#
+#   [Service]
+#   User=alice
+#   Environment=VPN_SWITCH_BASE=/home/alice/.vpn-switch/db
+#
+# Without these overrides the unit runs as root with no VPN_SWITCH_BASE,
+# which is rarely what you want.
+
+ExecStart=/usr/local/bin/vpn-switch session start %i
+ExecStop=/usr/local/bin/vpn-switch session stop %i
+
+[Install]
+WantedBy=multi-user.target

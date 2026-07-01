@@ -1,0 +1,69 @@
+#!/bin/sh
+#
+# ovpn-resolvconf-up - OpenVPN DNS configuration script for FreeBSD
+# Enhanced version with syslog integration
+#
+
+set -e
+
+INTERFACE="${1:-tun0}"
+RESOLVCONF="/sbin/resolvconf"
+
+# Log for debugging via syslog
+logger -t "ovpn-resolvconf" "UP: interface=$INTERFACE, args: $*"
+
+# OpenVPN provides DNS via foreign_option_* environment variables
+DNS_SERVERS=""
+SEARCH_DOMAINS=""
+
+# Parse foreign_option_* variables
+for optionname in $(env | grep '^foreign_option_' | cut -d= -f1); do
+    option=$(eval echo \\$$optionname)
+    logger -t "ovpn-resolvconf" "UP: processing $option"
+
+    # Parse dhcp-option entries
+    case "$option" in
+        "dhcp-option DNS "*)
+            server=$(echo "$option" | cut -d' ' -f3)
+            DNS_SERVERS="$DNS_SERVERS $server"
+            ;;
+        "dhcp-option DOMAIN "* | "dhcp-option DOMAIN-SEARCH "*)
+            domain=$(echo "$option" | cut -d' ' -f3)
+            SEARCH_DOMAINS="$SEARCH_DOMAINS $domain"
+            ;;
+    esac
+done
+
+# Build resolvconf content
+RESOLV_CONTENT=""
+
+# Add search domains
+if [ -n "$SEARCH_DOMAINS" ]; then
+    RESOLV_CONTENT="search$SEARCH_DOMAINS
+"
+fi
+
+# Add nameservers
+for server in $DNS_SERVERS; do
+    RESOLV_CONTENT="${RESOLV_CONTENT}nameserver $server
+"
+done
+
+if [ -z "$RESOLV_CONTENT" ]; then
+    logger -t "ovpn-resolvconf" "UP: No DNS configuration found"
+    exit 1
+fi
+
+logger -t "ovpn-resolvconf" "UP: Setting DNS servers:$DNS_SERVERS domains:$SEARCH_DOMAINS"
+
+# Update resolvconf
+echo -n "$RESOLV_CONTENT" | "$RESOLVCONF" -x -a "${INTERFACE}.inet"
+
+# Reload local_unbound to pick up resolvconf changes (FreeBSD-specific)
+# local_unbound doesn't auto-detect resolvconf updates, needs explicit reload
+if service local_unbound status >/dev/null 2>&1; then
+    logger -t "ovpn-resolvconf" "UP: Reloading local_unbound DNS daemon"
+    service local_unbound reload || logger -t "ovpn-resolvconf" "UP: Warning - failed to reload local_unbound"
+fi
+
+exit 0

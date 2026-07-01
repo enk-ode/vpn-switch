@@ -1,0 +1,11 @@
+sh
+# Interpreter for 'vpn-switch link <alias> <protocol>' command (protocol-level)
+# Terminal function that creates symlink in base directory
+#
+# Default value: "sh"
+#   Executes commands to create protocol-level symlink
+#   Used for: vpn-switch link default wireguard
+#
+# The _link2 function outputs commands like:
+#   ln -s ./wireguard /data/vpn/default
+#   echo "Created protocol link: default -> wireguard"

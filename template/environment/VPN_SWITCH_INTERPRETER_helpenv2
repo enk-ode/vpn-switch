@@ -1,0 +1,23 @@
+cat
+#
+# @summary Interpreter for 'helpenv <name> <location>' (documentation display)
+# @default cat
+# @values cat | cut -b3- | sh
+# @see VPN_SWITCH_INTERPRETER_helpenv0
+# @see VPN_SWITCH_TERMINAL_INTERPRETER
+#
+# Hard, arity-specific interpreter for the helpenv documentation renderer.
+#
+# This is set explicitly rather than inheriting VPN_SWITCH_TERMINAL_INTERPRETER
+# on purpose: that global terminal default is a safety-first setting ("cat", show
+# don't run) that most users flip to "sh" for auto-execution. helpenv must ALWAYS
+# display its output and never execute it, or the help system would break the
+# moment a user opts into "sh". The arity-specific name sits at the top of the
+# interpreter resolution order and shadows the class default, so this can never
+# be changed as collateral damage from tuning the global terminal interpreter.
+#
+# @internal
+# Mirrors how 'help' pins VPN_SWITCH_INTERPRETER_help=cat, but arity-specific
+# (helpenv0/helpenv2) because helpenv1 is a combinator that needs the re-dispatch
+# interpreter — an arity-agnostic VPN_SWITCH_INTERPRETER_helpenv would wrongly
+# capture it.

@@ -1,0 +1,21 @@
+cat
+#
+# Default interpreter for terminal functions (single underscore prefix: _).
+#
+# Terminal functions output shell commands. The default interpreter 'cat' displays
+# commands without executing them (safe by default).
+#
+# Security rationale:
+# - New users see what commands would run before executing
+# - Prevents accidental execution of untrusted operations
+# - Principle of least privilege
+#
+# To enable auto-execution (for experienced users):
+#   echo "sh" > .env/local/VPN_SWITCH_TERMINAL_INTERPRETER
+#
+# Common alternatives:
+# - sh: Execute commands directly (opt-in for power users)
+# - tee log.txt | sh: Log commands and execute
+# - sh -x: Execute with shell tracing
+#
+# Phase 3.1.2: Intrinsic classification via naming convention (_ prefix).

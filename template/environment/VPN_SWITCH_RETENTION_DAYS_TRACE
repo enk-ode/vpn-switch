@@ -1,0 +1,46 @@
+1
+#
+# Trace retention period (in days) - DEBUGGING INFRASTRUCTURE
+#
+# Controls automatic execution tracing to .log/ directory.
+# This is debugging infrastructure that captures execution flow (set -x output).
+#
+# Behavior:
+#   > 0: Tracing enabled - execution flow logged to .log/YYYY-MM-DD/HHMMSS.PID_function.trace
+#     0: Tracing disabled - no trace files created
+#
+# Trace file format:
+#   Shows function call resolution, interpreter selection, and execution flow.
+#   Useful for debugging dispatch issues and understanding command execution.
+#
+# Trace file organization:
+#   .log/
+#   ├── 2025-10-26/
+#   │   ├── 140523.12345_wireguard_start1.log    # stderr output
+#   │   └── 140523.12345_wireguard_start1.trace  # execution trace
+#   └── 2025-10-25/
+#       └── ...
+#
+# Manual override:
+#   You can also set VPN_SWITCH_TRACE_FILE explicitly to override automatic path:
+#   env VPN_SWITCH_TRACE_FILE=/tmp/debug.trace vpn-switch wireguard start
+#
+# Cleanup:
+#   Trace files follow same retention policy as log files.
+#   vpn-switch logs clean removes both .log and .trace files older than retention.
+#
+# Default: 1 day (enable debugging during initial setup when most issues occur)
+#
+# Debugging workflow:
+#   - Enable LOG (=1) + TRACE (=1) when debugging issues
+#   - LOG captures errors (stderr), TRACE captures execution context
+#   - Together they provide complete debugging information
+#   - Disable both (=0) for production/silent mode
+#
+# Customization examples:
+#   VPN_SWITCH_RETENTION_DAYS_TRACE=7     # Keep 1 week
+#   VPN_SWITCH_RETENTION_DAYS_TRACE=14    # Keep 2 weeks
+#   VPN_SWITCH_RETENTION_DAYS_TRACE=0     # Disable tracing
+#
+# Performance note: Tracing adds overhead (~10-20% slower). Enable during
+# debugging, disable after resolving issues.

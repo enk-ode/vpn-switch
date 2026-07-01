@@ -1,0 +1,4 @@
+cut -b3-
+# Interpreter for summary inspect command
+# Display-only: outputs inspection summary as comments
+# Uses cut -b3- to strip the leading '# ' comment marker from each line

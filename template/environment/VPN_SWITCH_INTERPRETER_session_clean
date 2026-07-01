@@ -1,0 +1,25 @@
+sh
+# Interpreter for 'vpn-switch session clean' command
+# Terminal function that generates shell commands to remove stale symlinks
+#
+# Default value: "sh"
+#   Scans session/ directory for symlinks pointing to removed sessions
+#   Removes any stale symlinks to keep session/ directory clean
+#
+# Bug #5 Fix: Manual cleanup command for stale session symlinks
+#   Session symlinks can become stale when:
+#   - Session directories are removed manually
+#   - System crashes leave orphaned symlinks
+#   - Concurrent stop operations race with symlink cleanup
+#
+# Session clean workflow:
+#   1. Lists all symlinks in session/ directory
+#   2. Checks if each symlink target exists
+#   3. Removes symlinks pointing to non-existent sessions
+#
+# Example usage:
+#   vpn-switch session clean     # Remove all stale symlinks
+#
+# Advanced - dry-run mode:
+#   echo "cat" > .env/local/VPN_SWITCH_INTERPRETER_session_clean
+#   vpn-switch session clean     # Preview commands without executing

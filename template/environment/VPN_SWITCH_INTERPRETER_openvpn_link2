@@ -1,0 +1,6 @@
+sh
+# Interpreter for 'vpn-switch openvpn link <alias> <target>' command
+#
+# Executes file system operations for creating protocol-level OpenVPN symlinks.
+#
+# Default: sh (execute commands)

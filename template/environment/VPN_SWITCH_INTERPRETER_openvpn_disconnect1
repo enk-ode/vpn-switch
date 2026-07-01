@@ -1,0 +1,14 @@
+sh
+# Interpreter for: openvpn disconnect <interface>
+#
+# Default: sh (execute commands immediately)
+#
+# Disconnect OpenVPN interface and clean up session.
+# Outputs shell commands to:
+# - Stop OpenVPN daemon
+# - Destroy interface
+# - Clean up firewall tables
+#
+# Alternative interpreters:
+#   cat         - dry-run (show commands without executing)
+#   tee log | sh - log commands and execute

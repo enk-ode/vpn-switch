@@ -1,0 +1,33 @@
+VPN_SWITCH_BATCH_COMBINATOR_INTERPRETER VPN_SWITCH_COMBINATOR_INTERPRETER VPN_SWITCH_TERMINAL_INTERPRETER VPN_SWITCH_DISPLAY_ANSI VPN_SWITCH_EXT_IF VPN_SWITCH_FUNCTION_OVERRIDE VPN_SWITCH_INTERFACES_MACRO VPN_SWITCH_BINARY_openvpn VPN_SWITCH_BINARY_wireguard VPN_SWITCH_INTERFACE_openvpn VPN_SWITCH_INTERFACE_wireguard VPN_SWITCH_RESOLVCONF_openvpn VPN_SWITCH_RESOLVCONF_wireguard VPN_SWITCH_DNS_openvpn VPN_SWITCH_DNS_wireguard VPN_SWITCH_CREDENTIALS_openvpn VPN_SWITCH_PATH VPN_SWITCH_PFCTL VPN_SWITCH_PF_CONF VPN_SWITCH_PHASES_CONNECT VPN_SWITCH_PHASES_DISCONNECT VPN_SWITCH_PREFIX VPN_SWITCH_PROTON_REMOTES_TABLE VPN_SWITCH_SCRIPT_SHELL VPN_SWITCH_TRACE_FILE VPN_SWITCH_VPN_DNS_TABLE VPN_SWITCH_WG
+# Prologue profile: Safe minimal set for dump/restore
+#
+# This profile defines which .env/local/ variables are transferred in the PROLOGUE
+# section of a dump (before protocol imports/adds/links execute).
+#
+# Purpose:
+#   - Provides minimal environment needed for restore to work correctly
+#   - Includes base interpreters (needed for restore execution model)
+#   - Excludes function-specific interpreter overrides (prevent restore breakage)
+#
+# Included - Base interpreters (global execution control):
+#   - VPN_SWITCH_TERMINAL_INTERPRETER (default: cat, user might override to sh)
+#   - VPN_SWITCH_COMBINATOR_INTERPRETER (default: sh)
+#   - VPN_SWITCH_BATCH_COMBINATOR_INTERPRETER (default: batch processor)
+#
+# Included - Configuration (paths, interfaces, firewall, DNS, display):
+#   - VPN_SWITCH_PATH, VPN_SWITCH_WG, VPN_SWITCH_OPENVPN (binary paths)
+#   - VPN_SWITCH_WG_INTERFACE, VPN_SWITCH_OVPN_INTERFACE (interface names)
+#   - VPN_SWITCH_PFCTL, VPN_SWITCH_PF_CONF, firewall settings
+#   - VPN_SWITCH_*_RESOLVCONF, VPN_SWITCH_VPN_DNS_TABLE (DNS)
+#   - VPN_SWITCH_DISPLAY_ANSI, VPN_SWITCH_PHASES_* (behavior)
+#
+# Excluded - Function-specific interpreter overrides:
+#   - VPN_SWITCH_INTERPRETER_import (if cat, imports won't copy files!)
+#   - VPN_SWITCH_INTERPRETER_add (if cat, directories won't be created!)
+#   - VPN_SWITCH_INTERPRETER_link (if cat, symlinks won't be created!)
+#   - VPN_SWITCH_INTERPRETER_* (all other function-specific overrides)
+#
+# These function-specific interpreters are applied in the EPILOGUE (after restore
+# completes) to restore the user's full environment configuration.
+#
+# Phase 3.1.4: Dump/restore prologue/epilogue separation

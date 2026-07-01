@@ -1,0 +1,14 @@
+sh -c 'tmp=$(mktemp "$VPN_SWITCH_BASE/.tmp/batch.XXXXXX"); chmod 0600 "$tmp"; cat > "$tmp"; exec "$VPN_SWITCH_CONTEXT_SCRIPT" batch "$tmp" true'
+# Interpreter for: openvpn stop (arity-0)
+#
+# Batch-combinator ___openvpn_stop0 outputs multiple disconnect commands.
+# Uses batch interpreter pattern to process all commands.
+#
+# Chain:
+#   vpn-switch openvpn stop
+#   → ___openvpn_stop0 lists all openvpn sessions
+#   → outputs: "$VPN_SWITCH_SCRIPT openvpn disconnect <interface>" (per session)
+#   → interpreter: batch (processes each disconnect command)
+#
+# Alternative interpreters:
+#   cat    - dry-run (show commands without executing)

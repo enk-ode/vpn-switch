@@ -1,0 +1,1 @@
+sh -c 'tmp=$(mktemp "$VPN_SWITCH_BASE/.tmp/batch.XXXXXX"); chmod 0600 "$tmp"; cat > "$tmp"; exec "$VPN_SWITCH_CONTEXT_SCRIPT" batch "$tmp" false'

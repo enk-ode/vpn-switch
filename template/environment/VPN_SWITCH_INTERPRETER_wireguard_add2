@@ -1,0 +1,19 @@
+head -n1 | xargs sh -c '[ "$0" = "--" ] || set -- "$0" "$@"; eval "p=$1"; shift; exec "$p" "$@"' --
+# Interpreter for 'vpn-switch wireguard add <category> <target>' command
+# Combinator function (__wireguard_add2) that delegates to add3
+#
+# Default value: "head -n1 | xargs sh -c 'eval exec \"$0\" \"$@\"' --"
+#   This is the standard combinator interpreter (see VPN_SWITCH_COMBINATOR_INTERPRETER)
+#   Recursively dispatches the output command through vpn-switch.sh
+#
+# Function behavior:
+#   Validates category and target exist
+#   Delegates to add3: "$VPN_SWITCH_CONTEXT_SCRIPT" wireguard add "$category" "$target" "$target"
+#   (Uses target as both target and alias - creates symlink with same name as target)
+#
+# ⚠️ CRITICAL: This is a COMBINATOR function (__ prefix) in a HETEROGENEOUS family.
+# It outputs a vpn-switch command, NOT shell commands.
+# Using 'sh' interpreter here will BREAK this function.
+#
+# This is part of a HETEROGENEOUS family (mixed terminal/combinator functions).
+# See VPN_SWITCH_INTERPRETER_wireguard_add for family-level documentation.

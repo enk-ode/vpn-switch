@@ -1,0 +1,5 @@
+em0
+# External network interface (WAN interface)
+# Default: em0 (common FreeBSD interface name)
+# Set to your actual external interface name (e.g., lagg0, igb0, re0)
+# Used in pf.conf macros for firewall rules

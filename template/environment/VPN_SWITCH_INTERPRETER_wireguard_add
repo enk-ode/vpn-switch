@@ -1,0 +1,35 @@
+cat
+# ⚠️  WARNING: wireguard add is a HETEROGENEOUS family ⚠️
+# Setting this family interpreter is EXTREMELY DANGEROUS and will break add2!
+#
+# ═══════════════════════════════════════════════════════════════════════════
+# STRONGLY RECOMMENDED: Use arity-specific interpreters instead of this file
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# This family has MIXED function types (heterogeneous):
+#   add1 (_wireguard_add1)   → TERMINAL    → outputs shell commands
+#   add2 (__wireguard_add2)  → COMBINATOR  → outputs ONE vpn-switch command  ⚠️
+#   add3 (_wireguard_add3)   → TERMINAL    → outputs shell commands
+#
+# Setting this family interpreter to 'sh' will:
+#   ✅ Work for add1 (executes shell commands correctly)
+#   ❌ BREAK add2 (tries to execute "$VPN_SWITCH_CONTEXT_SCRIPT" as shell command)
+#   ✅ Work for add3 (executes shell commands correctly)
+#
+# Safe configuration (use arity-specific templates):
+#   VPN_SWITCH_INTERPRETER_wireguard_add1=sh
+#   VPN_SWITCH_INTERPRETER_wireguard_add2=<combinator-interpreter>
+#   VPN_SWITCH_INTERPRETER_wireguard_add3=sh
+#
+# Or simply rely on defaults:
+#   - add1 and add3 use VPN_SWITCH_TERMINAL_INTERPRETER (defaults to 'cat', set to 'sh' for auto-exec)
+#   - add2 uses VPN_SWITCH_COMBINATOR_INTERPRETER (correct combinator execution)
+#
+# Default value: "cat" (SAFE - display only, no execution)
+#   This prevents accidental breakage if family interpreter is mistakenly set
+#   All add commands will display output without executing
+#
+# For more information:
+#   - See docs/ARCHITECTURE.md "DANGER: Heterogeneous Family Commands"
+#   - See docs/DEBUGGING_GUIDE.md "DANGER: Heterogeneous Family Commands"
+#   - See docs/ISSUE_001_VARIABLE_EXPANSION_TIMING.md for background

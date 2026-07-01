@@ -1,0 +1,17 @@
+cat
+# Interpreter for 'vpn-switch wireguard info' command
+# Terminal function that outputs category information directly to user
+#
+# Default value: "cat"
+#   Outputs category details directly to stdout (no execution needed)
+#   Shows category metadata, path, and contents
+#
+# This is a terminal/display function - it should NOT execute commands.
+# Use 'cat' to send output directly to the user without interpretation.
+#
+# Example output:
+#   # Category: privacy
+#   # Path: /path/to/database/wireguard/privacy
+#   # Contents:
+#   #   ch1 -> ../wg-CH-1.conf
+#   #   rs1 -> ../wg-RS-1.conf

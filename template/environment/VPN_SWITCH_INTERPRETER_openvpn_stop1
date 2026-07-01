@@ -1,0 +1,16 @@
+xargs sh -c '[ "$0" = "--" ] || set -- "$0" "$@"; exec "$VPN_SWITCH_CONTEXT_SCRIPT" "$@"' --
+# Interpreter for: openvpn stop <interface> (arity-1)
+# Combinator function - outputs single disconnect command
+#
+# NOTE: Arity-0 uses VPN_SWITCH_INTERPRETER_openvpn_stop0 (batch pattern)
+#
+# Default: xargs (execute single command)
+#
+# Stop specific OpenVPN session.
+# - __openvpn_stop1 validates session exists
+# - outputs: "$VPN_SWITCH_SCRIPT openvpn disconnect <interface>"
+#
+# Delegates to: openvpn disconnect <interface>
+#
+# Alternative interpreters:
+#   cat    - dry-run (show commands without executing)

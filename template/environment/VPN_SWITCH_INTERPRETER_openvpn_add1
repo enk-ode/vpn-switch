@@ -1,0 +1,13 @@
+sh
+# Interpreter for 'vpn-switch openvpn add <group>' command
+# Terminal function (_openvpn_add1) that creates group directories
+#
+# Default value: "sh"
+#   Executes shell commands output by _openvpn_add1
+#
+# Function behavior:
+#   Creates group directory: mkdir -p "$VPN_SWITCH_BASE/openvpn/$group"
+#   Sets permissions: chmod 0700 "$VPN_SWITCH_BASE/openvpn/$group"
+#
+# This is part of a HETEROGENEOUS family (mixed terminal/combinator functions).
+# See VPN_SWITCH_INTERPRETER_wireguard_add for family-level documentation pattern.

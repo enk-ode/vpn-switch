@@ -1,0 +1,19 @@
+cat
+# Interpreter for _wireguard_dump0 - WireGuard protocol database dump
+#
+# The wireguard dump function generates executable shell commands for recreating
+# WireGuard configs, categories, and links. It produces output for capture/piping.
+#
+# Type: Non-terminal function (produces data for consumption by other commands)
+# Default: cat (output to stdout for capture/piping)
+#
+# Usage:
+#   vpn-switch wireguard dump > wireguard-backup.sh  # Save WireGuard-only dump
+#   vpn-switch dump > full-backup.sh                 # Full dump (calls wireguard dump)
+#
+# Override examples:
+#   VPN_SWITCH_INTERPRETER_wireguard_dump=tee /tmp/wg-dump.log  # Output and log
+#   VPN_SWITCH_INTERPRETER_wireguard_dump=cat  # Default (explicit)
+#
+# Note: This is called by _dump0, which handles the prologue/epilogue.
+# The wireguard dump focuses only on protocol-specific commands.

@@ -1,0 +1,20 @@
+cut -b3-
+# Interpreter for 'vpn-switch session show <PID>' command
+# Terminal function that displays session metadata and cached connect script
+#
+# Default value: "cut -b3-"
+#   Strips '# ' prefix from output lines (defensive pattern)
+#   All output is comment-prefixed for safety
+#
+# This is a terminal/display function - it should NOT execute commands.
+# The function outputs comment-prefixed text, and this interpreter strips
+# the '# ' prefix to produce clean output.
+#
+# Useful for:
+#   - Inspecting what commands will run when resuming a session
+#   - Debugging connection issues
+#   - Understanding session state before resumption
+#
+# Example usage:
+#   vpn-switch session show 12345    # Show specific session
+#   vpn-switch session show          # Show most recent session (via combinator)

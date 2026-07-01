@@ -1,0 +1,15 @@
+sh
+# Interpreter for 'vpn-switch fail <code> <message>' command
+# Terminal function that propagates exit codes from failed commands
+#
+# Default value: "sh"
+#   Must execute (not just display) to exit with preserved code
+#   The _fail2 function outputs shell commands (printf + exit)
+#
+# Unlike 'error' which always exits 1, 'fail' preserves the exact exit code.
+# This is used by the exit code propagation infrastructure to distinguish:
+# - VPN-switch errors (exit 1 via error command)
+# - External command failures (exit 127, 126, etc. via fail command)
+#
+# Step 1-2: Exit code propagation (producer-side failures)
+#

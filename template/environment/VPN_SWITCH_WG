@@ -1,0 +1,5 @@
+wg
+# WireGuard control utility
+# Used to display WireGuard interface status
+#
+# Default: wg (from package: wireguard-tools)

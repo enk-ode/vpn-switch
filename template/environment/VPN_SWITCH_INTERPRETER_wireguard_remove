@@ -1,0 +1,13 @@
+sh
+# Interpreter for 'vpn-switch wireguard remove' command family
+# Terminal functions for removing configs and links
+#
+# Default value: "sh"
+#   Executes commands output by _wireguard_remove* functions
+#   Handles removal with safety checks for active sessions and references
+#
+# Usage patterns:
+#   vpn-switch wireguard remove <name>             → _wireguard_remove1 (removes config/link from protocol dir)
+#   vpn-switch wireguard remove <category> <name>  → _wireguard_remove2 (removes link from category)
+#
+# Safety: Config files are checked for active sessions and symlink references before removal

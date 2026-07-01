@@ -1,0 +1,13 @@
+cat
+# Interpreter for 'vpn-switch version' command
+# Terminal info-style function (_version0) - outputs final display text
+#
+# Default value: cat
+#   The terminal already resolves all filesystem state at generation time
+#   and outputs the final two-line report ('db: <sha>' / 'source: <sha>').
+#   cat just passes the text through.
+#
+# Same pattern as VPN_SWITCH_INTERPRETER_help and VPN_SWITCH_INTERPRETER_dumpenv.
+#
+# Alternative interpreters:
+#   sh  - WRONG, would try to execute 'db:' and 'source:' as commands

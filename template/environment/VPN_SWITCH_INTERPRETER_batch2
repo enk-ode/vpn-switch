@@ -1,0 +1,21 @@
+cat
+# Interpreter for '_batch2()' function (batch command execution)
+# Terminal function that executes batch files and displays progress/results
+#
+# Default value: "cat"
+#   Displays batch execution progress and results without re-executing output
+#   The _batch2() function outputs:
+#     - Progress messages (# Executing:, # ✓ Success, # ✗ Failed)
+#     - Output from delegated commands (via process_arguments())
+#     - Summary (# Batch execution complete)
+#
+# The batch command executes its input commands via process_arguments(),
+# which already applies the appropriate interpreter to each delegated command.
+# The output should be displayed directly to the user, not executed again.
+#
+# Using 'sh' here would cause the system to try executing the output text
+# (including config filenames, validation symbols, etc.) as shell commands,
+# leading to errors like "sh: wireguard/wg-TEST-CH-1.conf: not found".
+#
+# Phase 3.4: Fixed protocol-agnostic list/validate delegation issues
+# Architecture fix: Renamed from ___batch2 to _batch2 (terminal function)

@@ -1,0 +1,11 @@
+sh
+# Interpreter for 'vpn-switch remove <alias>' command (protocol-level)
+# Terminal function that removes symlink from base directory
+#
+# Default value: "sh"
+#   Executes commands to remove protocol-level symlink
+#   Used for: vpn-switch remove default
+#
+# The _remove1 function outputs commands like:
+#   rm /data/vpn/default
+#   echo "Removed protocol link: default"

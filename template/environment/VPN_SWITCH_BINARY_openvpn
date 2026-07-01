@@ -1,0 +1,14 @@
+openvpn
+# VPN_SWITCH_BINARY_openvpn - OpenVPN process binary
+#
+# Used to identify running OpenVPN processes and to execute OpenVPN commands.
+# This follows the VPN_SWITCH_BINARY_<protocol> naming convention for
+# protocol-agnostic binary lookup.
+#
+# Default: openvpn (expects binary in PATH)
+# FreeBSD typical location: /usr/local/sbin/openvpn
+#
+# Used by:
+#   - check_and_create_session(): Detect running VPN processes
+#   - _openvpn_connect1(): Execute OpenVPN connection
+#   - _openvpn_disconnect1(): Execute OpenVPN disconnection

@@ -1,0 +1,4 @@
+# Interpreter for wireguard list command
+# Strips '# ' prefix from comment-prefixed output
+# This allows list output to pass through batch combinators safely
+cut -b3-

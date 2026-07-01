@@ -1,0 +1,24 @@
+firewall vpn dns
+# Connection phases to execute (space-separated list).
+#
+# Phases are executed in order during VPN connection. Each phase
+# is a reusable component that outputs shell commands for connect.sh.
+#
+# Built-in phases:
+#   firewall - Configure packet filter (PF) tables and rules
+#   vpn      - Bring up VPN interface (protocol-specific)
+#   dns      - Configure DNS resolution
+#
+# User-provided phases:
+#   Place custom phase scripts in ${VPN_SWITCH_BASE}/.include/phase/
+#   Example: .include/phase/custom_routing_up.sh
+#
+# Phase resolution order (for phase "foo"):
+#   1. User override: .include/phase/foo_up.sh (if exists)
+#   2. Protocol-specific: phase_${protocol}_foo_up() function
+#   3. Generic: phase_foo_up() function
+#
+# Usage:
+#   - Connect uses phases with "_up" suffix
+#   - Disconnect uses same phases with "_down" suffix (reversed order)
+#   - Customize by editing .env/local/VPN_SWITCH_PHASES_CONNECT

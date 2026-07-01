@@ -1,0 +1,27 @@
+#!/bin/sh
+#
+# ovpn-resolvconf-down - OpenVPN DNS cleanup script for FreeBSD
+# Enhanced version with syslog integration
+#
+
+set -e
+
+INTERFACE="${1:-tun0}"
+RESOLVCONF="/sbin/resolvconf"
+
+# Log for debugging via syslog
+logger -t "ovpn-resolvconf" "DOWN: interface=$INTERFACE"
+
+# Remove DNS configuration for interface
+"$RESOLVCONF" -d "${INTERFACE}.inet"
+
+logger -t "ovpn-resolvconf" "DOWN: Removed DNS for $INTERFACE"
+
+# Reload local_unbound to pick up resolvconf changes (FreeBSD-specific)
+# local_unbound doesn't auto-detect resolvconf updates, needs explicit reload
+if service local_unbound status >/dev/null 2>&1; then
+    logger -t "ovpn-resolvconf" "DOWN: Reloading local_unbound DNS daemon"
+    service local_unbound reload || logger -t "ovpn-resolvconf" "DOWN: Warning - failed to reload local_unbound"
+fi
+
+exit 0

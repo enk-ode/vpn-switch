@@ -1,0 +1,8 @@
+/etc/pf.macros/interfaces
+# PF macros file for interface definitions
+# vpn-switch updates this file to set vpn_if macro
+#
+# Default: /etc/pf.macros/interfaces (custom layout)
+# Used in pf.conf as: include "/etc/pf.macros/interfaces"
+# Contains: ext_if = "<your_external_interface>"
+#           vpn_if = "wg0"

@@ -1,0 +1,11 @@
+cat
+# Interpreter for 'vpn-switch wireguard patch' command
+# Terminal function that displays patched configuration
+#
+# Default value: "cat"
+#   Outputs patched config directly to stdout for inspection
+#
+# Usage:
+#   vpn-switch wireguard patch wg-RS-1.conf          # Display patched config
+#   vpn-switch wireguard patch wg-RS-1.conf | less   # Page through it
+#   vpn-switch wireguard patch wg-RS-1.conf > /tmp/test.conf  # Save to file

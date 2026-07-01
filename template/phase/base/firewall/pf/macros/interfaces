@@ -1,0 +1,5 @@
+# pf macros for VPN switching
+# This file is automatically updated by vpn-switch
+
+ext_if = "em0"
+vpn_if = "tun0"

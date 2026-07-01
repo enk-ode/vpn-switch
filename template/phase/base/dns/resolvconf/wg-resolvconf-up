@@ -1,0 +1,63 @@
+#!/bin/sh
+#
+# wg-resolvconf-up - WireGuard DNS configuration script for FreeBSD
+# Enhanced version with syslog integration
+#
+
+set -e
+
+INTERFACE="${1:-wg0}"
+RESOLVCONF="/sbin/resolvconf"
+
+# Log for debugging via syslog
+logger -t "wg-resolvconf" "UP: interface=$INTERFACE, args: $*"
+
+# WireGuard provides DNS via environment or config
+DNS_SERVERS="${DNS:-}"
+
+# If no DNS provided via environment, try to extract from config
+if [ -z "$DNS_SERVERS" ] && [ -n "$2" ]; then
+    # Parse additional arguments for DNS servers
+    shift  # Remove interface argument
+    while [ $# -gt 0 ]; do
+        case "$1" in
+            --dns)
+                DNS_SERVERS="$DNS_SERVERS $2"
+                shift 2
+                ;;
+            *)
+                shift
+                ;;
+        esac
+    done
+fi
+
+# Build resolvconf content
+RESOLV_CONTENT=""
+
+# Add nameservers
+for server in $DNS_SERVERS; do
+    RESOLV_CONTENT="${RESOLV_CONTENT}nameserver $server
+"
+done
+
+if [ -z "$RESOLV_CONTENT" ]; then
+    logger -t "wg-resolvconf" "UP: No DNS servers found for $INTERFACE"
+    exit 1
+fi
+
+logger -t "wg-resolvconf" "UP: Setting DNS servers: $DNS_SERVERS for $INTERFACE"
+
+# Update resolvconf
+echo -n "$RESOLV_CONTENT" | "$RESOLVCONF" -x -a "${INTERFACE}.inet"
+
+# Restart local_unbound to pick up resolvconf changes (FreeBSD-specific)
+# local_unbound doesn't auto-detect resolvconf updates with reload, needs restart
+# Note: Using restart instead of reload because reload (SIGHUP) doesn't properly
+# reload the forwarder configuration from resolvconf
+if service local_unbound status >/dev/null 2>&1; then
+    logger -t "wg-resolvconf" "UP: Restarting local_unbound DNS daemon"
+    service local_unbound restart || logger -t "wg-resolvconf" "UP: Warning - failed to restart local_unbound"
+fi
+
+exit 0

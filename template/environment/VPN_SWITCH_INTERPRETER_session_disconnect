@@ -1,0 +1,37 @@
+xargs sh -c '[ "$0" = "--" ] || set -- "$0" "$@"; eval "p=$1"; shift; exec "$p" "$@"' --
+# Interpreter for 'vpn-switch session disconnect <PID>' command
+# Non-terminal combinator function - delegates to protocol-specific disconnect
+#
+# Default value: xargs env VPN_SWITCH_BASE="$VPN_SWITCH_BASE"
+#   Enables combinator recursion by executing the output command
+#   Reads session metadata and delegates to appropriate protocol
+#
+# Combinator chain:
+#   vpn-switch session disconnect 12345
+#   → _session_disconnect1 reads session metadata
+#   → determines protocol (wireguard or openvpn) and interface
+#   → outputs: "$VPN_SWITCH_SCRIPT wireguard disconnect wg0"
+#   → interpreter: xargs (executes protocol-specific command)
+#   → recurses: vpn-switch wireguard disconnect wg0
+#   → _wireguard_disconnect1 generates cleanup commands
+#   → interpreter: cat or sh (displays or executes)
+#
+# Role in stop workflow:
+#   stop → wireguard stop → wireguard disconnect (protocol cleanup)
+#   stop → session stop → (metadata cleanup after all protocols stopped)
+#
+# Stale session handling:
+#   - Logs warning if session PID is dead
+#   - Still attempts disconnect (interface may still exist)
+#   - Graceful fallback for orphaned sessions
+#
+# Architecture notes:
+#   - Session layer coordinates protocol-specific cleanup
+#   - Protocol layer owns interface lifecycle
+#   - Session metadata removed separately (by session stop)
+#
+# Advanced usage - inspect delegation:
+#   echo "cat" > .env/local/VPN_SWITCH_INTERPRETER_session_disconnect
+#   vpn-switch session disconnect 12345    # Shows which protocol command will run
+#
+# See ARCHITECTURE.md section "Session Layer" for architecture details

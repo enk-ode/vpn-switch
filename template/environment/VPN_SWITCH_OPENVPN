@@ -1,0 +1,4 @@
+/usr/local/sbin/openvpn
+# OpenVPN binary path
+# Default: /usr/local/sbin/openvpn (FreeBSD standard location)
+# Adjust if openvpn is installed elsewhere

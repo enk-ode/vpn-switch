@@ -1,0 +1,7 @@
+# VPN provider remote servers
+# This file is automatically updated by vpn-switch
+# Contains IP addresses of VPN provider servers for firewall rules
+
+# Example entries (will be populated by vpn-switch):
+# 1.2.3.4
+# 5.6.7.8

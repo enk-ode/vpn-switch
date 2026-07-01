@@ -1,0 +1,12 @@
+0
+# Enable ANSI color output in messages
+# Controls whether display() function uses colors
+#
+# Values:
+#   0 - Plain text output (default)
+#   1 - Colored output (errors=red, warnings=yellow, etc.)
+#
+# Automatically detected if terminal supports colors
+# Override for scripts/logs: export VPN_SWITCH_DISPLAY_ANSI=0
+#
+# Note: Empty lines, blank lines, or comment lines are treated as "unset"

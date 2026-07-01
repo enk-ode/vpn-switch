@@ -1,0 +1,28 @@
+xargs sh -c '[ "$0" = "--" ] || set -- "$0" "$@"; eval "p=$1"; shift; exec "$p" "$@"' --
+# Interpreter for 'vpn-switch wireguard stop <interface>' command (arity-1)
+# Combinator function - outputs single disconnect command
+#
+# NOTE: Arity-0 uses VPN_SWITCH_INTERPRETER_wireguard_stop0 (batch pattern)
+#
+# Default value: xargs (execute single command)
+#   Validates session exists and generates disconnect command
+#
+# Combinator chain:
+#   vpn-switch wireguard stop wg0
+#   → __wireguard_stop1 validates session exists
+#   → outputs: "$VPN_SWITCH_SCRIPT wireguard disconnect wg0"
+#   → interpreter: xargs (executes disconnect command)
+#   → recurses: vpn-switch wireguard disconnect wg0
+#   → _wireguard_disconnect1 generates cleanup commands
+#   → interpreter: cat or sh (displays or executes)
+#
+# Phase 2.1.2 architecture:
+#   - Protocol layer handles interface teardown (wireguard disconnect)
+#   - Session layer handles metadata cleanup (session stop)
+#   - Clean separation: stop finds sessions, disconnect tears down interfaces
+#
+# Advanced usage - dry-run mode:
+#   echo "cat" > .env/local/VPN_SWITCH_INTERPRETER_wireguard_stop
+#   vpn-switch wireguard stop wg0          # Shows disconnect command without executing
+#
+# See ARCHITECTURE.md section "Phase 2.1.2 - Stop/Disconnect Architecture" for details

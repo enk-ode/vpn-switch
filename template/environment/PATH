@@ -1,0 +1,12 @@
+/sbin:/bin:/usr/bin:/usr/local/bin
+# PATH for vpn-switch.sh command execution (colon-separated)
+# Used when running vpn-switch.sh and generating phase scripts
+#
+# This is for file operations, text processing, script execution, and system inspection.
+# Includes /sbin for inspection commands (kldstat, ifconfig, netstat).
+#
+# Default: /sbin:/bin:/usr/bin:/usr/local/bin
+# - /sbin: System inspection utilities (kldstat, ifconfig)
+# - /bin: Core shell utilities (sh, cp, mkdir, chmod, cat, rm, mv, ln)
+# - /usr/bin: Extended utilities (sed, grep, find, awk, stat, head, tail)
+# - /usr/local/bin: User-installed tools (optional, generally safe)

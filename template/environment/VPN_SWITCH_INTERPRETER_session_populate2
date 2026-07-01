@@ -1,0 +1,8 @@
+sh
+# Interpreter for _session_populate2 - Session metadata creation
+#
+# This function creates session metadata files (protocol, interface, started).
+# It MUST execute to create the files, so interpreter is always 'sh'.
+#
+# This is included in the minimal profile because session creation is a core
+# operation that must work in all configurations.

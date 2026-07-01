@@ -1,0 +1,8 @@
+sh
+# Interpreter for _wireguard_patch2 - Config patching
+#
+# This function patches config files (removes DNS/PreUp/PostDown hooks).
+# It MUST execute to copy and modify the config file, so interpreter is always 'sh'.
+#
+# This is included in the minimal profile because config patching is a core
+# operation that must work in all configurations.
