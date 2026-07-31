@@ -1,0 +1,16 @@
+10.96.0.1
+# VPN_SWITCH_DNS_openvpn - OpenVPN DNS server
+#
+# Default DNS server for OpenVPN connections.
+# This follows the VPN_SWITCH_DNS_<protocol> naming convention for
+# protocol-agnostic DNS server lookup.
+#
+# Default: 10.96.0.1 (VPN provider OpenVPN gateway)
+#
+# VPN provider's OpenVPN service assigns IPs from 10.96.0.0/16 with gateway at .1
+# This DNS server is used when the OpenVPN server doesn't push DNS via dhcp-option.
+#
+# Behavior:
+#   - Used as fallback if config doesn't contain dhcp-option DNS directives
+#   - Can be overridden per-database via setenv command
+#   - Configured via resolvconf and requires local_unbound reload

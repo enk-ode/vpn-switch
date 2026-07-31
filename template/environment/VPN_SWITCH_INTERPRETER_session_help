@@ -1,0 +1,13 @@
+cat
+# Interpreter for 'vpn-switch session help' command
+# Terminal function that displays session management help text
+#
+# Default value: "cat"
+#   Displays help information without executing commands
+#   The _session_help0() function outputs formatted help text
+#
+# This command is informational only - it does not generate
+# executable commands, so it should use 'cat' to display directly
+# to the terminal rather than 'sh' to execute.
+#
+# Phase 2.7: Contextual help system

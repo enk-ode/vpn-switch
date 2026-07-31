@@ -1,0 +1,7 @@
+/usr/bin/install
+# BSD install utility
+# Used to atomically install files with proper permissions and ownership
+#
+# Default: /usr/bin/install (FreeBSD system utility)
+# With privilege elevation: sudo /usr/bin/install or doas /usr/bin/install
+# For tests: echo install (mock for inspection without system writes)

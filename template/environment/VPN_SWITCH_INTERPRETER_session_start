@@ -1,0 +1,22 @@
+sh
+# Interpreter for: session start [name|PID] (NON-TERMINAL COMBINATOR)
+# Resolves to _session_start0 or _session_start1 via dispatch
+#
+# Function role: Non-terminal combinator - resolves session and outputs next command
+# Output: Combinator command ("session connect <PID>") for recursion into vpn-switch
+#
+# Combinator chain (3-stage pattern, mirrors wireguard):
+#   1. session start [name|PID]  → resolves session → outputs: session connect <PID>
+#   2. session connect <PID>     → executes connect.sh (TERMINAL)
+#
+# Named sessions workflow:
+#   vpn-switch session start          # Resolve default → session connect <PID>
+#   vpn-switch session start work     # Resolve "work" → session connect <PID>
+#   vpn-switch session start 12345    # Direct PID → session connect 12345
+#
+# The sh interpreter executes the output command, causing recursion back into vpn-switch.
+# This maintains architectural consistency: every start command → connect command.
+#
+# Advanced - dry-run mode:
+#   echo "cat" > .env/local/VPN_SWITCH_INTERPRETER_session_start
+#   vpn-switch session start work    # Preview combinator output without executing

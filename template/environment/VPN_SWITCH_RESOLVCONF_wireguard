@@ -1,0 +1,15 @@
+/usr/local/sbin/wg-resolvconf
+# VPN_SWITCH_RESOLVCONF_wireguard - WireGuard resolvconf script base path
+#
+# Used for DNS management in phase-based connect/disconnect scripts.
+# This follows the VPN_SWITCH_RESOLVCONF_<protocol> naming convention for
+# protocol-agnostic resolvconf script lookup.
+#
+# Default: /usr/local/sbin/wg-resolvconf
+# Script automatically appends -up or -down:
+#   - Connect calls: /usr/local/sbin/wg-resolvconf-up
+#   - Disconnect calls: /usr/local/sbin/wg-resolvconf-down
+#
+# Used by:
+#   - Phase scripts: template/phase/wireguard/connect/dns.sh
+#   - Phase scripts: template/phase/wireguard/disconnect/dns.sh

@@ -1,0 +1,39 @@
+# (disabled - trace logging not active)
+#
+# /tmp/vpn-switch-trace.log
+#
+# Debug trace file - logs command execution flow (dispatch, interpreter resolution, output)
+
+USAGE:
+  Set this variable to enable detailed execution tracing for debugging.
+
+  Environment variable (one-time):
+    VPN_SWITCH_TRACE_FILE=/tmp/trace.log vpn-switch wireguard start privacy
+
+  Persistent configuration (.env/local/VPN_SWITCH_TRACE_FILE):
+    Uncomment the path above: /tmp/vpn-switch-trace.log
+
+  Disable tracing (three ways):
+    1. Leave empty (blank line)
+    2. Use comment line starting with #
+    3. Remove/unset the variable
+
+    All three are treated as "unset" by build_env_args()
+
+OUTPUT FORMAT:
+  Each trace entry includes:
+  - Timestamp
+  - Command being executed
+  - Interpreter used (sh, cat, xargs, etc.)
+  - Dispatch output (before interpreter)
+  - Interpreter output (after interpreter)
+
+EXAMPLE TRACE OUTPUT:
+  === 2025-10-08 10:36:38 ===
+  Command: vpn-switch.sh wireguard start privacy
+  Interpreter: sh
+  --- Dispatch output (before interpreter) ---
+  wireguard connect 12345
+  --- Interpreter output (after interpreter) ---
+  [connection commands...]
+  === End ===

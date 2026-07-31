@@ -1,0 +1,6 @@
+/etc/pf.tables/vpn_dns
+# PF table file for VPN DNS server addresses
+# vpn-switch updates this with DNS from WireGuard/OpenVPN config
+#
+# Default: /etc/pf.tables/vpn_dns
+# Used in pf.conf as: table <vpn_dns> persist file "/etc/pf.tables/vpn_dns"

@@ -1,0 +1,6 @@
+/etc/pf.tables/proton_remotes
+# PF table file for VPN provider remote server addresses
+# vpn-switch updates this with Endpoint IPs from config
+#
+# Default: /etc/pf.tables/proton_remotes
+# Used in pf.conf as: table <proton_remotes> persist file "/etc/pf.tables/proton_remotes"

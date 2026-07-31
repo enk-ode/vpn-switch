@@ -1,0 +1,14 @@
+wg-quick
+# VPN_SWITCH_BINARY_wireguard - WireGuard process binary
+#
+# Used to identify running WireGuard processes and to execute WireGuard commands.
+# This follows the VPN_SWITCH_BINARY_<protocol> naming convention for
+# protocol-agnostic binary lookup.
+#
+# Default: wg-quick (from package: wireguard-tools)
+# With privilege elevation: sudo wg-quick or doas wg-quick
+#
+# Used by:
+#   - check_and_create_session(): Detect running VPN processes
+#   - _wireguard_connect1(): Execute WireGuard connection
+#   - _wireguard_disconnect1(): Execute WireGuard disconnection

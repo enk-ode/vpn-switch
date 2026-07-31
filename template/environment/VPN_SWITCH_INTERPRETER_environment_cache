@@ -1,0 +1,4 @@
+sh
+# Interpreter for environment cache command
+# - Uses 'sh' to execute cache on/off commands
+# - Status output starts with '#' so it displays as comments (harmless when executed)

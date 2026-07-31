@@ -1,0 +1,17 @@
+sh
+# Interpreter for: session connect <pid> (TERMINAL FUNCTION)
+# Resolves to _session_connect1 via right-to-left interpreter resolution
+#
+# Function role: Terminal function - executes cached connect.sh script
+# Output: Shell commands to execute cached session connection script
+#
+# DEFAULT: "sh" - Execute the cached connect.sh script
+#   This is Stage 2 of the two-stage workflow:
+#   Stage 1: vpn-switch wireguard start privacy (displays, caches)
+#   Stage 2: vpn-switch session start <PID|name> (executes cached script)
+#
+# Override for dry-run (see what would execute):
+#   echo "cat" > .env/local/VPN_SWITCH_INTERPRETER_session_connect
+#
+# Override for custom execution (logging, validation):
+#   echo "tee /tmp/session.log | sh" > .env/local/VPN_SWITCH_INTERPRETER_session_connect

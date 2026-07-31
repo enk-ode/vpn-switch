@@ -1,0 +1,21 @@
+session environment
+# VPN_SWITCH_PSEUDO_PROTOCOL - Space-separated list of pseudo-protocol directories
+#
+# Pseudo-protocols are top-level directories in VPN_SWITCH_BASE that are NOT
+# VPN protocols (like wireguard, openvpn). They are used for special purposes:
+#
+#   session      - Named session symlinks (work → ../.session/12345)
+#   environment  - Environment variable overrides
+#
+# Hidden directories (.session, .build, .log, .include, .env) are handled
+# separately by the .* pattern in is_pseudo_protocol().
+#
+# Used by:
+#   - __start0: Protocol discovery (skip pseudo-protocols when selecting VPN)
+#   - ___stop0: Protocol enumeration (skip pseudo-protocols when stopping)
+#
+# Default value: "session environment"
+#
+# Testing override:
+#   To test "no protocols found" error paths, add real protocols to this list:
+#   VPN_SWITCH_PSEUDO_PROTOCOL="session environment wireguard openvpn"

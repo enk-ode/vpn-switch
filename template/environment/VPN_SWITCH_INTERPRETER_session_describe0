@@ -1,0 +1,4 @@
+cut -b3-
+# Interpreter for session describe command
+# Display-only: outputs session script descriptions as comments
+# Uses cut -b3- to strip the leading '# ' comment marker from each line

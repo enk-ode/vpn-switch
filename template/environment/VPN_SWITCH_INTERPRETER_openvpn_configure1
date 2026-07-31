@@ -1,0 +1,8 @@
+sh
+# Interpreter for _openvpn_configure1 - Session configuration
+#
+# This function creates session symlinks (session/latest).
+# It MUST execute to create the links, so interpreter is always 'sh'.
+#
+# This is included in the minimal profile because session configuration is a core
+# operation that must work in all configurations.

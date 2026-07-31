@@ -1,0 +1,29 @@
+sh
+# Interpreter for 'vpn-switch printenv' command
+# Terminal function that displays environment variables in isolated context
+#
+# Default value: "sh"
+#   Executes commands to display all environment variables
+#   Useful for debugging .env file loading and environment isolation
+#   Shows exactly what variables are available in run_env() context
+#
+# Function behavior:
+#   - Generates commands to display sorted environment variables
+#   - Includes header/footer for readability
+#   - Uses 'sh' interpreter to execute commands and show environment
+#
+# Debug workflow:
+#   1. Check if .env files are loading correctly
+#   2. Verify VPN_SWITCH_BASE propagation
+#   3. Confirm VPN_SWITCH_ENV_DIR derivation
+#   4. Validate VPN_SWITCH_INTERPRETER_* variables
+#
+# Example usage:
+#   vpn-switch printenv                    # Show current environment
+#   VPN_SWITCH_BASE=/test vpn-switch printenv  # Test with custom base
+#
+# Advanced - show commands without executing (for debugging):
+#   echo "cat" > .env/local/VPN_SWITCH_INTERPRETER_printenv
+#   vpn-switch printenv                    # Show commands only
+#
+# See ARCHITECTURE.md for details on the interpreter system and run_env() isolation

@@ -1,0 +1,17 @@
+cut -b3-
+# Interpreter for 'vpn-switch session validate' command
+# Validate session bookkeeping (symlinks, metadata)
+#
+# Default value: "cut -b3-"
+#   Strips the leading '# ' comment marker from diagnostic output
+#   Display-only function (no execution, no privileged operations)
+#
+# All checks run at generation time; the function emits final data
+# ("# "-prefixed report lines) and returns non-zero on errors, which
+# propagates through the producer exit channel regardless of the
+# interpreter (see combine_exit_codes).
+#
+# Example usage:
+#   vpn-switch session validate
+#
+# See ARCHITECTURE.md for details on terminal function pattern

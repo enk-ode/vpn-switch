@@ -1,0 +1,22 @@
+cat
+# Interpreter for 'vpn-switch wireguard clean' command
+# Batch combinator function that outputs multiple remove commands for broken symlinks
+#
+# Function: ___wireguard_clean0 (batch combinator - outputs multiple vpn-switch commands)
+#
+# Default value: "cat"
+#   Outputs commands directly to stdout (NOT executed by default)
+#   User must review and pipe to sh to execute: vpn-switch wireguard clean | sh
+#
+# This follows the batch combinator pattern for safe, reviewable bulk operations.
+# The ___wireguard_clean0 function outputs commands like:
+#   "$VPN_SWITCH_CONTEXT_SCRIPT" wireguard remove "broken-link"
+#   "$VPN_SWITCH_CONTEXT_SCRIPT" wireguard remove "category" "broken-link"
+#
+# User workflow:
+#   1. Review: vpn-switch wireguard clean
+#   2. Execute: vpn-switch wireguard clean | sh
+#
+# Alternative interpreters:
+#   sh              - Execute immediately (dangerous, not recommended)
+#   tee clean.sh    - Save to file for later review/execution

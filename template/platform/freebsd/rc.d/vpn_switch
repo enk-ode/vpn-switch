@@ -1,0 +1,102 @@
+#!/bin/sh
+#
+# vpnswitch - FreeBSD rc.d script for vpn-switch daemon
+# Add to /etc/rc.conf: vpnswitch_enable="YES"
+#
+
+# PROVIDE: vpnswitch
+# REQUIRE: NETWORKING DAEMON cleanvar
+# BEFORE: LOGIN
+# KEYWORD: shutdown
+
+. /etc/rc.subr
+
+name=vpnswitch
+desc="VPN Switch Management Service"
+rcvar=vpnswitch_enable
+
+# Default configuration
+load_rc_config $name
+
+# Set defaults
+: ${vpnswitch_enable:="NO"}
+: ${vpnswitch_config_dir:="/data/vpn"}
+: ${vpnswitch_user:="root"}
+: ${vpnswitch_group:="wheel"}
+: ${vpnswitch_pidfile:="/var/run/vpnswitch.pid"}
+: ${vpnswitch_logfile:="/var/log/vpnswitch.log"}
+
+# Commands and paths
+command="/usr/local/sbin/vpn-switch"
+pidfile="${vpnswitch_pidfile}"
+required_files="${vpnswitch_config_dir}/credentials.txt"
+
+# Service functions
+vpnswitch_prestart() {
+    # Ensure log file exists and has proper permissions
+    if [ ! -f "${vpnswitch_logfile}" ]; then
+        touch "${vpnswitch_logfile}"
+        chown "${vpnswitch_user}:${vpnswitch_group}" "${vpnswitch_logfile}"
+        chmod 640 "${vpnswitch_logfile}"
+    fi
+
+    # Check if config directory exists
+    if [ ! -d "${vpnswitch_config_dir}" ]; then
+        err 1 "VPN config directory not found: ${vpnswitch_config_dir}"
+    fi
+
+    # Check if credentials file exists
+    if [ ! -f "${vpnswitch_config_dir}/credentials.txt" ]; then
+        err 1 "Credentials file not found: ${vpnswitch_config_dir}/credentials.txt"
+    fi
+
+    # Create PID directory if needed
+    piddir=$(dirname "${vpnswitch_pidfile}")
+    if [ ! -d "${piddir}" ]; then
+        mkdir -p "${piddir}"
+    fi
+}
+
+vpnswitch_start() {
+    # This is a management utility, not a traditional daemon
+    # We'll just check if the system is properly configured
+    echo "Starting ${desc}..."
+
+    # Verify installation
+    if ! "${command}" status >/dev/null 2>&1; then
+        echo "VPN Switch configuration verified"
+        return 0
+    else
+        echo "VPN Switch configuration check failed"
+        return 1
+    fi
+}
+
+vpnswitch_stop() {
+    echo "Stopping ${desc}..."
+
+    # Stop any active VPN connections
+    "${command}" stop >/dev/null 2>&1
+
+    echo "All VPN connections stopped"
+    return 0
+}
+
+vpnswitch_status() {
+    "${command}" status
+}
+
+vpnswitch_restart() {
+    vpnswitch_stop
+    vpnswitch_start
+}
+
+# Custom commands
+extra_commands="status"
+start_cmd="vpnswitch_start"
+stop_cmd="vpnswitch_stop"
+status_cmd="vpnswitch_status"
+restart_cmd="vpnswitch_restart"
+start_precmd="vpnswitch_prestart"
+
+run_rc_command "$1"

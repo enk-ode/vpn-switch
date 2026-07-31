@@ -1,0 +1,25 @@
+# ShellCheck configuration for vpn-switch
+# This project targets FreeBSD sh, which supports 'local' despite not being strict POSIX
+
+# Use sh as shell (not bash)
+shell=sh
+
+# Disable warnings that are safe to ignore for this codebase:
+
+# SC3043: 'local' is supported in FreeBSD sh, dash, and most modern shells
+disable=SC3043
+
+# SC2155: Declare and assign separately - not needed for controlled command substitutions
+disable=SC2155
+
+# SC2046: Quote command substitutions - not needed for controlled inputs (no user data)
+disable=SC2046
+
+# SC2086: Quote variables - intentional word splitting in dispatch mechanism
+disable=SC2086
+
+# SC2124: Array to string assignment - intentional behavior in dispatch ($remaining)
+disable=SC2124
+
+# Keep enabled: SC2034 (unused vars), SC2162 (read -r), SC2012 (ls parsing)
+# These might indicate real issues worth investigating

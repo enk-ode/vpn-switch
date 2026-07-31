@@ -1,0 +1,12 @@
+sh
+# Interpreter for 'vpn-switch wireguard import <file>' command
+# Terminal function that outputs shell commands to import config file
+#
+# Default value: "sh"
+#   Executes commands to copy config file to protocol directory
+#   Sets proper permissions (0400) on imported config
+#
+# The _wireguard_import1 function outputs commands like:
+#   cp /path/to/config.conf /data/vpn/wireguard/config.conf
+#   chmod 0400 /data/vpn/wireguard/config.conf
+#   echo "Imported: wireguard/config.conf"

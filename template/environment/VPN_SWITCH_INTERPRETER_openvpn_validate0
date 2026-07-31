@@ -1,0 +1,19 @@
+cut -b3-
+# Interpreter for 'vpn-switch openvpn validate' command
+# Terminal function that validates OpenVPN configurations
+#
+# Default value: "cut -b3-"
+#   Strips the leading '# ' comment marker from diagnostic output
+#   Display-only function (no execution, no privileged operations)
+#
+# Function behavior:
+#   - Checks for broken symlinks in protocol directory
+#   - Validates group symlinks
+#   - Checks for naming conflicts
+#   - Validates config file syntax
+#   - Outputs diagnostic information as comments
+#
+# Example usage:
+#   vpn-switch openvpn validate
+#
+# See ARCHITECTURE.md for details on terminal function pattern

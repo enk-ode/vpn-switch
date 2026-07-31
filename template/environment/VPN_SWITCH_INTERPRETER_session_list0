@@ -1,0 +1,20 @@
+cut -b3-
+# Interpreter for 'vpn-switch session list' command
+# Terminal function that outputs comment-prefixed session list
+#
+# Default value: "cut -b3-"
+#   Strips '# ' prefix from output lines (defensive pattern)
+#   Function outputs all content as comments for safety
+#   If interpreter misconfigured, output is just harmless comments
+#
+# Session list shows: PID, protocol, interface, state, config, started timestamp
+#
+# Example raw output (from function):
+#   # VPN Sessions:
+#   # PID        PROTOCOL     INTERFACE    STATE                CONFIG         STARTED
+#   # 12345      wireguard    wg0          active/referenced    wg-US.conf     2025-10-05 22:00:00
+#
+# Example processed output (after cut -b3-):
+#   VPN Sessions:
+#   PID        PROTOCOL     INTERFACE    STATE                CONFIG         STARTED
+#   12345      wireguard    wg0          active/referenced    wg-US.conf     2025-10-05 22:00:00

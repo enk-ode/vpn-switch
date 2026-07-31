@@ -1,0 +1,27 @@
+cat
+# Interpreter for ___dumpenv1 - Dump .env/local/ variables with profile filtering
+#
+# The dumpenv function generates executable shell commands (setenv calls)
+# for recreating .env/local/ variables, filtered by profile (prologue/epilogue).
+#
+# Type: Terminal function (produces commands for dump output)
+# Default: cat (output to stdout for capture/piping)
+#
+# Profiles:
+#   prologue - Safe minimal set (base interpreters + paths, no function-specific overrides)
+#   epilogue - Complete set (all variables including function-specific interpreters)
+#
+# Usage:
+#   vpn-switch dumpenv prologue  # Generate prologue setenv commands
+#   vpn-switch dumpenv epilogue  # Generate epilogue setenv commands
+#   vpn-switch dump              # Calls both (via ___dump0)
+#
+# Override examples:
+#   VPN_SWITCH_INTERPRETER_dumpenv=tee /tmp/env-dump.log  # Output and log
+#   VPN_SWITCH_INTERPRETER_dumpenv=cat  # Default (explicit)
+#
+# Note: This function is called by ___dump0 to generate prologue and epilogue sections.
+# Profile separation prevents restore breakage (function-specific interpreters in
+# prologue would prevent imports/adds/links from executing during restore).
+#
+# Phase 3.1.4: Dump/restore prologue/epilogue separation

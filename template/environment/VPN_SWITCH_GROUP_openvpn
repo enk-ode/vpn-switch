@@ -1,0 +1,17 @@
+# VPN_SWITCH_GROUP_openvpn - Privilege-drop group for OpenVPN configs
+#
+# Optional group name enforced in patched OpenVPN configs via the
+# "group" directive. Companion to VPN_SWITCH_USER_openvpn.
+#
+# Default: (empty - "group" directives in configs are left unchanged)
+#
+# If set, vpn-switch patches configs at connect time:
+#   - Existing "group" directives are rewritten to this value
+#   - If no "group" directive exists, one is appended
+#
+# Example:
+#   openvpn
+#
+# Background:
+#   The FreeBSD openvpn port >= 2.7 ships a dedicated "openvpn"
+#   user/group and recommends migrating configs away from "nobody".

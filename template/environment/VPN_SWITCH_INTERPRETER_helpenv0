@@ -1,0 +1,14 @@
+cat
+#
+# @summary Interpreter for 'helpenv' (lists documented environment variables)
+# @default cat
+# @values cat | cut -b3- | sh
+# @see VPN_SWITCH_INTERPRETER_helpenv2
+# @see VPN_SWITCH_TERMINAL_INTERPRETER
+#
+# Hard, arity-specific interpreter for the helpenv variable listing.
+#
+# Pinned explicitly rather than inheriting VPN_SWITCH_TERMINAL_INTERPRETER: that
+# global terminal default is a safety-first "cat" that most users flip to "sh".
+# The help system must always display, never execute, so the listing pins its
+# own interpreter at the top of the resolution order, immune to that change.

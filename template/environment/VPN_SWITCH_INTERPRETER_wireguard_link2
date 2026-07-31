@@ -1,0 +1,11 @@
+sh
+# Interpreter for 'vpn-switch wireguard link <alias> <target>' command
+# Terminal function that creates symlink in protocol directory
+#
+# Default value: "sh"
+#   Executes commands to create symlink in wireguard/ directory
+#   Uses relative path (./<target>) for same-directory symlinks
+#
+# The _wireguard_link2 function outputs commands like:
+#   ln -s ./wg-US-123.conf /data/vpn/wireguard/us-fast
+#   echo "Created link: wireguard/us-fast -> wg-US-123.conf"

@@ -1,0 +1,19 @@
+# VPN_SWITCH_DNS_UPDOWN_openvpn - Control OpenVPN's built-in dns-updown hook
+#
+# Optional value for the "dns-updown" directive in patched OpenVPN
+# configs. OpenVPN >= 2.7 ships a built-in DNS integration (on FreeBSD
+# a shared /usr/local/libexec/openvpn/dns-updown script) that would
+# compete with vpn-switch's DNS phase for resolv.conf ownership.
+#
+# Default: (empty - no "dns-updown" directive is added)
+#
+# If set, vpn-switch patches configs at connect time:
+#   - Existing "dns-updown" directives are rewritten to this value
+#   - If no "dns-updown" directive exists, one is appended
+#
+# Recommended value on OpenVPN >= 2.7:
+#   disable
+#
+# Caveat:
+#   The "dns-updown" directive is unknown to OpenVPN 2.6 and earlier
+#   and would make the daemon fail to start - hence opt-in, no default.

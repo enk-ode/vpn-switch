@@ -1,0 +1,51 @@
+head -n1 | xargs sh -c '[ "$0" = "--" ] || set -- "$0" "$@"; eval "p=$1"; shift; exec "$p" "$@"' --
+#
+# Default interpreter for combinator functions (double underscore prefix: __).
+#
+# Combinator functions output complete command lines including the script path.
+# Example output: "$VPN_SWITCH_CONTEXT_SCRIPT" wireguard connect "12345"
+#
+# The default interpreter uses:
+# - head -n1: Take first line of output (combinator functions output exactly one command)
+# - xargs: Convert stdin to command arguments (preserves quoting)
+# - sh -c 'SCRIPT' --: Shell wrapper with conditional execution
+#   - [ "$0" = "--" ]: Check if we're on dash (Debian) or other POSIX shell
+#   - eval exec "$@": On dash, $0 is "--", so use only $@ (all arguments)
+#   - eval exec "$0" "$@": On FreeBSD sh, $0 is first real arg, use both
+#   - eval: Expands variables like $VPN_SWITCH_CONTEXT_SCRIPT from environment
+#   - exec: Replaces shell process (no fork, runs in current environment)
+#
+# Platform differences in xargs behavior:
+# - FreeBSD sh:   xargs sh -c 'script' -- arg1 arg2  → $0=arg1, $@=arg2
+# - Debian dash:  xargs sh -c 'script' -- arg1 arg2  → $0=--, $@=arg1 arg2
+#
+# The conditional handles both platforms transparently.
+#
+# Platform-specific optimizations (if you only target one platform):
+# - FreeBSD only: head -n1 | xargs sh -c 'eval exec "$0" "$@"' --
+# - Debian only:  head -n1 | xargs sh -c 'eval exec "$@"' --
+#
+# Examples:
+#
+# 1. FreeBSD sh behavior:
+#    echo "/bin/echo hello" | xargs sh -c 'echo "0=$0 @=$@"' --
+#    Output: 0=/bin/echo @=hello
+#
+# 2. Debian dash behavior:
+#    echo "/bin/echo hello" | xargs dash -c 'echo "0=$0 @=$@"' --
+#    Output: 0=-- @=/bin/echo hello
+#
+# 3. Portable pattern (current):
+#    echo "/bin/echo hello" | xargs sh -c '[ "$0" = "--" ] && eval exec "$@" || eval exec "$0" "$@"' --
+#    Output on both: hello
+#
+# The script path ($VPN_SWITCH_CONTEXT_SCRIPT) is part of the function OUTPUT,
+# not part of the interpreter. This allows functions to control which script
+# is executed (self-reference or delegation).
+#
+# Environment isolation via run_env():
+# - When used with run_env, the environment is set up via env - boundary
+# - VPN_SWITCH_CONTEXT_SCRIPT and VPN_SWITCH_BASE are passed by run_env
+#
+# Phase 3.1.2: Intrinsic classification via naming convention (__ prefix).
+# Phase 4.3.1: Cross-platform compatibility (FreeBSD sh + Debian dash).

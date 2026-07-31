@@ -1,0 +1,10 @@
+cat
+# Interpreter for 'vpn-switch logs clean' command
+# Script generator: emits rm commands for old log directories.
+#
+# Default value: "cat"
+#   Safety-first: display the generated commands for review.
+#   Execute with: vpn-switch logs clean | sh
+#
+# Without this template the terminal default (often "sh") would
+# execute the removals immediately instead of displaying them.

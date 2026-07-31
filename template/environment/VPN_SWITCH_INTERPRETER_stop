@@ -1,0 +1,12 @@
+sh
+# Interpreter for: stop [interface] (TERMINAL FUNCTION)
+# Resolves to _stop0 (no args) or _stop1 (with interface) via right-to-left resolution
+#
+# Function role: Terminal function - generates session cleanup commands
+# Output: Shell commands to stop VPN sessions (calls protocol-specific disconnect functions)
+#
+# This interpreter executes the stop commands which iterate through active sessions
+# and call the appropriate disconnect function for each protocol.
+#
+# Override for dry-run:
+#   echo "cat" > .env/local/VPN_SWITCH_INTERPRETER_stop

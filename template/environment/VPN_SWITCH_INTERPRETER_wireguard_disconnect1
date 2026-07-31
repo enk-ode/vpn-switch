@@ -1,0 +1,12 @@
+sh
+# Interpreter for: wireguard disconnect <interface> (TERMINAL FUNCTION)
+# Resolves to _wireguard_disconnect1 via right-to-left interpreter resolution
+#
+# Function role: Terminal cleanup function - generates WireGuard disconnection commands
+# Output: Shell commands (kill process group, wg-quick down, cleanup firewall, remove session)
+#
+# This interpreter executes the cleanup commands to tear down the VPN connection safely.
+# Includes orphaned process cleanup to prevent stale wg-quick background processes.
+#
+# Override for dry-run (see cleanup commands without executing):
+#   echo "cat" > .env/local/VPN_SWITCH_INTERPRETER_wireguard_disconnect

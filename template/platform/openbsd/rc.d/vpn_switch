@@ -1,0 +1,36 @@
+#!/bin/ksh
+#
+# OpenBSD rc.d script for vpn-switch — brings up a saved session via rcctl.
+#
+# OpenBSD rc.d is daemon-oriented, so vpn-switch (a session manager, not a
+# long-running daemon) overrides rc_start/rc_stop/rc_check. The session to act
+# on is taken from the service flags (default: "default"):
+#
+#   rcctl enable vpn_switch
+#   rcctl set vpn_switch flags home      # act on the 'home' session
+#   rcctl start vpn_switch
+#
+# Configure the owning user's database via the environment if it is not the
+# system default (e.g. in /etc/rc.conf.local or a wrapper).
+
+daemon="/usr/local/bin/vpn-switch"
+
+. /etc/rc.d/rc.subr
+
+_session="${daemon_flags:-default}"
+
+rc_reload=NO
+
+rc_start() {
+	${daemon} session start "${_session}"
+}
+
+rc_stop() {
+	${daemon} session stop "${_session}"
+}
+
+rc_check() {
+	${daemon} status
+}
+
+rc_cmd $1

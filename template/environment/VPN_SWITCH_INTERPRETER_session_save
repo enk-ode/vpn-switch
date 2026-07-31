@@ -1,0 +1,24 @@
+sh
+# Interpreter for 'vpn-switch session save [name]' command
+# Terminal function that generates shell commands to save session as named link
+#
+# Default value: "sh"
+#   Creates symlink in session/ directory pointing to active session
+#   Enables quick resumption: vpn-switch session start <name>
+#
+# Named sessions are persistent across reboots (symlinks survive).
+# Multiple named sessions can coexist (work, home, travel, etc.).
+#
+# Session save workflow:
+#   1. Finds most recent active session (highest PID, process alive)
+#   2. Creates symlink: session/<name> → ../.session/<PID>
+#   3. Enables resumption: vpn-switch session start <name>
+#
+# Example usage:
+#   vpn-switch session save work     # Save current session as "work"
+#   vpn-switch session save           # Save as "default"
+#   vpn-switch session start work    # Resume work session later
+#
+# Advanced - dry-run mode:
+#   echo "cat" > .env/local/VPN_SWITCH_INTERPRETER_session_save
+#   vpn-switch session save work     # Preview commands without executing

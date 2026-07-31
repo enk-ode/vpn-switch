@@ -1,0 +1,30 @@
+sh
+# Interpreter for 'vpn-switch session refresh' command
+# Terminal function that generates shell commands to reconcile interface ownership
+#
+# Default value: "sh"
+#   Compares the peers actually loaded on each live interface (ground truth)
+#   against each session's stored config, then re-points session/latest-$interface
+#   to the session whose config is genuinely loaded. Repairs ownership drift so
+#   'session list' reports the session that is really live.
+#
+# When ownership drifts:
+#   - A resume re-points latest-$interface but `wg-quick up` fails because the
+#     interface is already up with a different config
+#   - disconnect does not remove the ownership symlink, leaving stale ownership
+#   - Concurrent start/stop operations race on the ownership symlink
+#
+# Session refresh workflow:
+#   1. Reads loaded WireGuard peers per interface (read-only, no root needed)
+#   2. Finds the session whose stored PublicKey set matches the loaded peers
+#   3. Re-points latest-$interface to that session (or removes it if the
+#      interface is down); leaves ownership untouched when peers are unreadable
+#
+# Operates only on symlinks in the user-owned session/ directory - no sudo.
+#
+# Example usage:
+#   vpn-switch session refresh     # Reconcile ownership against reality
+#
+# Advanced - dry-run mode (preview commands without executing):
+#   echo "cat" > .env/local/VPN_SWITCH_INTERPRETER_session_refresh
+#   vpn-switch session refresh

@@ -1,0 +1,55 @@
+sh
+# Interpreter for 'vpn-switch init' command
+# Terminal function that generates shell commands to initialize VPN database
+#
+# Default value: "sh"
+#   Executes shell commands to create directory structure
+#   Copies environment templates from .env-templates/ to .env/default/
+#   Sets proper file permissions for security
+#
+# Function behavior:
+#   - Creates VPN_SWITCH_BASE directory structure
+#   - Sets up .session/, .env/, session/, wireguard/ directories
+#   - Copies all .env-templates/* to .env/default/
+#   - Sets secure permissions (0700 for sensitive dirs, 0600 for files)
+#   - Idempotent: safe to run multiple times
+#
+# Directory structure created:
+#   $VPN_SWITCH_BASE/
+#   ├── .session/           # Active VPN sessions (PID-based)
+#   ├── .env/
+#   │   ├── default/        # Template-based configuration
+#   │   └── local/          # Machine-specific overrides
+#   ├── session/            # Named session symlinks (work, home, etc.)
+#   └── wireguard/          # WireGuard configs and categories
+#
+# Generated commands:
+#   mkdir -p "$VPN_SWITCH_BASE/.session"
+#   mkdir -p "$VPN_SWITCH_BASE/.env/default"
+#   mkdir -p "$VPN_SWITCH_BASE/.env/local"
+#   mkdir -p "$VPN_SWITCH_BASE/session"
+#   mkdir -p "$VPN_SWITCH_BASE/wireguard"
+#   chmod 0700 "$VPN_SWITCH_BASE/.session"
+#   # ... plus template copying
+#
+# First-time setup workflow:
+#   1. Set VPN_SWITCH_BASE environment variable
+#   2. Run: vpn-switch init
+#   3. Review .env/default/ variables
+#   4. Add machine-specific overrides to .env/local/
+#   5. Import WireGuard configs: vpn-switch wireguard import
+#
+# Example usage:
+#   export VPN_SWITCH_BASE=/usr/local/etc/vpn-switch
+#   vpn-switch init                        # Initialize database
+#
+# Advanced usage - dry-run mode:
+#   echo "cat" > /tmp/.env/default/VPN_SWITCH_INTERPRETER_init
+#   VPN_SWITCH_BASE=/tmp vpn-switch init   # Preview initialization commands
+#
+# Security notes:
+#   - .session/ uses 0700 (only owner can access)
+#   - Config files use 0600 (secrets protection)
+#   - .env/local/ should NOT be committed to version control
+#
+# See DEPLOYMENT.md for complete deployment workflow

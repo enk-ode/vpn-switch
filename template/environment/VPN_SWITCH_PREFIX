@@ -1,0 +1,6 @@
+/usr/local
+# Installation prefix for FreeBSD packages
+# Used to construct paths to system utilities
+#
+# Default: /usr/local (FreeBSD standard)
+# Alternative: /opt/local (macports), /usr (Linux)

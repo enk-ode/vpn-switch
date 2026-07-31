@@ -1,0 +1,22 @@
+firewall vpn dns
+# Inspection phases to execute (space-separated list).
+#
+# Phases are executed once per protocol during diagnostic inspection.
+# Each phase outputs diagnostic information about the current VPN state.
+#
+# Built-in phases:
+#   firewall - Show PF rules, tables (vpn_dns, vpn_remotes), DNS/Remote IPs
+#   vpn      - Show interface status, process info, configuration
+#   dns      - Show DNS server, resolv.conf, resolvconf helper status
+#
+# Phase scripts location:
+#   ${VPN_SWITCH_BASE}/.include/phase/${protocol}/inspect/${phase}.sh
+#
+# Unlike connect/disconnect phases which generate executable scripts,
+# inspect phases output diagnostic information for troubleshooting.
+#
+# Usage:
+#   - Executed by: vpn-switch phases inspect
+#   - Each phase shows current state (not historical)
+#   - Customize by editing .env/local/VPN_SWITCH_PHASES_INSPECT
+#

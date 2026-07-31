@@ -1,0 +1,6 @@
+sh
+# Interpreter for 'vpn-switch openvpn import <file>' command
+#
+# Executes file system operations for importing OpenVPN configuration files.
+#
+# Default: sh (execute commands)

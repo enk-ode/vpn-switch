@@ -1,0 +1,13 @@
+# (empty/disabled - function overrides not used)
+#
+# Path to custom script containing function overrides
+# Allows replacing protocol-specific implementations without modifying core script
+#
+# Use case: Replace pf firewall with ipfw, nftables, or iptables
+# Example: /usr/local/etc/vpn-switch/.env/my_overrides.sh
+#
+# The override script is sourced after vpn-switch.sh
+# Functions defined there replace default implementations
+#
+# To disable: Leave empty, use blank line, or start line with # (comment)
+# All three are treated as "unset" by build_env_args()

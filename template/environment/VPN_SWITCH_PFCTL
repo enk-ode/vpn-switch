@@ -1,0 +1,6 @@
+pfctl
+# Packet Filter control utility
+# Used to reload firewall rules and manage pf tables
+#
+# Default: pfctl (FreeBSD system utility)
+# With privilege elevation: sudo pfctl or doas pfctl

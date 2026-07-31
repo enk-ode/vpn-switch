@@ -1,0 +1,27 @@
+sh
+# Shell interpreter for generated scripts (connect.sh shebang)
+# Controls which shell executes generated connection scripts
+#
+# Default value: "sh"
+#   Standard POSIX shell, maximum portability
+#
+# Common alternatives:
+#   bash  - Bash-specific features
+#   zsh   - Zsh-specific features
+#   ksh   - Korn shell
+#
+# IMPORTANT: Must be a simple shell path, NOT a complex command
+#   ✓ Valid:   sh, bash, zsh, /bin/sh, /usr/local/bin/bash
+#   ✗ Invalid: sudo sh, sh -x, tee log | sh
+#
+# For complex execution wrappers, use VPN_SWITCH_INTERPRETER_session_connect instead
+#
+# The generated connect.sh will have shebang: #!/<value>
+# This only affects direct execution (./connect.sh)
+# Execution through vpn-switch uses INTERPRETER_session_connect
+#
+# Example - use bash for generated scripts:
+#   echo "bash" > .env/local/VPN_SWITCH_SCRIPT_SHELL
+#
+# Example - use zsh:
+#   echo "zsh" > .env/local/VPN_SWITCH_SCRIPT_SHELL

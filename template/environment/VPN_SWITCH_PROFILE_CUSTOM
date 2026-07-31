@@ -1,0 +1,19 @@
+
+# Custom profile: User-defined variable set (boilerplate)
+#
+# Define your own custom profile by adding variable names to line 1.
+# Example:
+#   VPN_SWITCH_TERMINAL_INTERPRETER VPN_SWITCH_COMBINATOR_INTERPRETER ...
+#
+# Available variables:
+#   See .env-templates/ directory for all available configuration variables
+#
+# To start from an existing profile:
+#   cat VPN_SWITCH_PROFILE_MINIMAL > VPN_SWITCH_PROFILE_CUSTOM
+#   # Or
+#   cat VPN_SWITCH_PROFILE_ALL > VPN_SWITCH_PROFILE_CUSTOM
+#
+# Then customize the list to match your needs.
+#
+# Usage:
+#   vpn-switch bootstrap /path/to/base custom

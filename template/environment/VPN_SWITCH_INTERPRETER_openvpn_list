@@ -1,0 +1,20 @@
+cat
+# Interpreter for 'vpn-switch openvpn list' command
+# Terminal function that outputs listing of configs and groups directly to user
+#
+# Default value: "cat"
+#   Outputs directory listing directly to stdout (no execution needed)
+#   Shows configuration files and group directories
+#
+# This is a terminal/display function - it should NOT execute commands.
+# Use 'cat' to send output directly to the user without interpretation.
+#
+# Example output:
+#   === OpenVPN Configurations ===
+#   Configuration files:
+#   us-server.ovpn
+#   eu-server.ovpn
+#   Groups:
+#   work
+#   personal
+#

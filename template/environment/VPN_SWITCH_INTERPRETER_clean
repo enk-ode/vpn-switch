@@ -1,0 +1,14 @@
+sh
+# Interpreter for 'vpn-switch clean' command (protocol-agnostic)
+# Combinator function that delegates to protocol-specific clean commands
+#
+# Default value: "sh"
+#   Executes combinator commands output by _clean0 function (if implemented)
+#   Delegates to "wireguard clean" and future "openvpn clean"
+#
+# Note: As of Phase 2.4.5, there is no _clean0 function yet.
+#       Use "vpn-switch wireguard clean" directly for now.
+#
+# Future implementation would output commands like:
+#   vpn-switch wireguard clean
+#   vpn-switch openvpn clean

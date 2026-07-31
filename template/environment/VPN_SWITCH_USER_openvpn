@@ -1,0 +1,24 @@
+# VPN_SWITCH_USER_openvpn - Privilege-drop user for OpenVPN configs
+#
+# Optional user name enforced in patched OpenVPN configs via the
+# "user" directive. Follows the VPN_SWITCH_USER_<protocol> naming
+# convention (WireGuard has no equivalent: it runs in the kernel and
+# has no userspace daemon that could drop privileges).
+#
+# Default: (empty - "user" directives in configs are left unchanged)
+#
+# If set, vpn-switch patches configs at connect time:
+#   - Existing "user" directives are rewritten to this value
+#   - If no "user" directive exists, one is appended
+#
+# Example:
+#   openvpn
+#
+# Background:
+#   The FreeBSD openvpn port >= 2.7 ships a dedicated "openvpn"
+#   user/group and recommends migrating configs away from "nobody".
+#
+# Caveat:
+#   Dropping privileges requires "persist-key" and "persist-tun" in
+#   the config for restarts/renegotiation to work. Most provider
+#   configs include these; verify before enabling.

@@ -1,0 +1,13 @@
+# VPN_SWITCH_LIBDIR - Library directory for vpn-switch program files
+# Contains: include/, template/
+#
+# Default: (empty) uses directory of vpn-switch.sh script
+# Installation: /usr/local/lib/vpn-switch or /usr/lib/vpn-switch
+#
+# This variable is automatically set during installation.
+# For development, leave empty to use script-relative paths.
+#
+# Example values:
+#   /usr/local/lib/vpn-switch  (FreeBSD standard prefix)
+#   /usr/lib/vpn-switch        (Debian/Linux FHS)
+#   ~/lib/vpn-switch           (User-local installation)

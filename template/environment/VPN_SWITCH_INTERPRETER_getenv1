@@ -1,0 +1,26 @@
+sh
+# Interpreter for 'vpn-switch getenv <var>' command
+# Terminal function that displays effective environment variable value
+#
+# Default value: "sh"
+#   Executes commands to show variable value from environment hierarchy
+#   Checks .env/local/ first (overrides)
+#   Falls back to .env/default/ (defaults)
+#   Falls back to .env-templates/ (templates)
+#   Shows source location and value
+#
+# Function behavior:
+#   - Searches for variable in hierarchy order
+#   - Shows source location (local/default/template)
+#   - Outputs first line of variable file (the actual value)
+#   - Exits with error if variable not found
+#
+# Example usage:
+#   vpn-switch getenv VPN_SWITCH_BASE
+#   vpn-switch getenv VPN_SWITCH_INTERPRETER_wireguard_connect
+#
+# Advanced - show commands without executing (for debugging):
+#   echo "cat" > .env/local/VPN_SWITCH_INTERPRETER_getenv
+#   vpn-switch getenv TEST_VAR                # Show commands only
+#
+# See ARCHITECTURE.md for details on the environment hierarchy system

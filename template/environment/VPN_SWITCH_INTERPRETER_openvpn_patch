@@ -1,0 +1,6 @@
+cat
+# Interpreter for 'vpn-switch openvpn patch' command
+#
+# Outputs patched OpenVPN configuration with DNS updates (for inspection/piping).
+#
+# Default: cat (output to stdout)

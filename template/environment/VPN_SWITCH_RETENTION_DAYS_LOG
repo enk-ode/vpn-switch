@@ -1,0 +1,40 @@
+1
+#
+# Log retention period (in days) - DEBUGGING INFRASTRUCTURE
+#
+# Captures stderr output from all commands to .log/ directory.
+# This is NOT a production logging system - it's debugging infrastructure
+# similar to VPN_SWITCH_TRACE_FILE but captures stderr instead of execution flow.
+#
+# Behavior:
+#   > 0: Debugging enabled - stderr logged to .log/YYYY-MM-DD/HHMMSS.PID_function.log
+#     0: Debugging disabled - stderr redirected to /dev/null (silent mode)
+#
+# Log file organization:
+#   .log/
+#   ├── 2025-10-26/
+#   │   ├── 140523.12345_wireguard_start1.log
+#   │   └── 140524.12346_wireguard_connect1.log
+#   └── 2025-10-25/
+#       └── ...
+#
+# Cleanup:
+#   vpn-switch validate     # Warns about logs older than retention period
+#   vpn-switch logs clean   # Generates rm commands for old logs (review first)
+#   vpn-switch logs clean | sh  # Execute cleanup
+#
+# Default: 1 day (enable debugging during initial setup when most issues occur)
+#
+# Debugging workflow:
+#   - Enable LOG (=1) + TRACE (=1) when debugging issues
+#   - LOG captures errors, TRACE captures execution context
+#   - Together they provide complete debugging information
+#   - Disable both (=0) for production/silent mode
+#
+# Customization examples:
+#   VPN_SWITCH_RETENTION_DAYS_LOG=7     # Keep 1 week
+#   VPN_SWITCH_RETENTION_DAYS_LOG=14    # Keep 2 weeks
+#   VPN_SWITCH_RETENTION_DAYS_LOG=0     # Disable (silent mode)
+#
+# Note: Each command creates its own timestamped log file. The retention period
+# applies to entire date directories, not individual files.

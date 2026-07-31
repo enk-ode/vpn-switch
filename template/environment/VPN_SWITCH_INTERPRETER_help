@@ -1,0 +1,13 @@
+cat
+# Interpreter for 'vpn-switch help' command (main help/usage)
+# Terminal function that displays help text directly to user
+#
+# Default value: "cat"
+#   Displays usage information without executing commands
+#   The usage() function outputs formatted help text
+#
+# The help command is informational only - it does not generate
+# executable commands, so it should use 'cat' to display directly
+# to the terminal rather than 'sh' to execute.
+#
+# Phase 2.7: Help system uses cat interpreter for direct display

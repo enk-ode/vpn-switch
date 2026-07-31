@@ -1,0 +1,53 @@
+#!/sbin/openrc-run
+# OpenRC service for vpn-switch (Alpine Linux).
+#
+# Mirrors the systemd 'vpn-switch@<name>' instance pattern using OpenRC's
+# symlink-naming convention: symlink this script as vpn-switch.<session> and
+# OpenRC passes the suffix (after the dot) as the session to start/stop.
+#
+#   ln -s /etc/init.d/vpn-switch /etc/init.d/vpn-switch.home
+#   rc-update add vpn-switch.home default
+#   rc-service vpn-switch.home start
+#
+# The plain 'vpn-switch' service (no suffix) acts on the 'default' session.
+#
+# Per-instance configuration lives in /etc/conf.d/vpn-switch.<session>.
+# At minimum point it at the database that owns the session, e.g.:
+#
+#   # /etc/conf.d/vpn-switch.home
+#   export VPN_SWITCH_BASE="/home/alice/.vpn-switch/db"
+#
+# Without VPN_SWITCH_BASE the service runs as root against the system default
+# database, which is rarely what you want — see the systemd unit's comment for
+# the same caveat.
+
+description="vpn-switch session manager"
+
+# Session name = the part of the service name after the dot (vpn-switch.<name>);
+# the bare 'vpn-switch' service manages the 'default' session.
+_session="${RC_SVCNAME#vpn-switch}"
+_session="${_session#.}"
+: "${_session:=default}"
+
+command="/usr/local/bin/vpn-switch"
+
+depend() {
+	need net
+	after firewall
+}
+
+start() {
+	ebegin "Starting vpn-switch session ${_session}"
+	"${command}" session start "${_session}"
+	eend $?
+}
+
+stop() {
+	ebegin "Stopping vpn-switch session ${_session}"
+	"${command}" session stop "${_session}"
+	eend $?
+}
+
+status() {
+	"${command}" status
+}

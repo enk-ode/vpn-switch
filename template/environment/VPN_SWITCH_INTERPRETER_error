@@ -1,0 +1,18 @@
+sh
+# Interpreter for 'vpn-switch error ...' command
+# Terminal functions that output error display commands
+#
+# Default value: "sh"
+#   Must execute (not just display) to show error and exit
+#   The _error1/2/3 functions output shell commands via generate_error()
+#
+# The error command is used by COMBINATOR functions to output vpn-switch
+# error commands that will be executed by the batch interpreter. For example:
+#   echo "\"$VPN_SWITCH_CONTEXT_SCRIPT\" error \"Config not found: $config\""
+#
+# This allows errors to be:
+# 1. Inspectable - visible in dry-run/inspect mode
+# 2. Properly propagated - exit code flows through pipeline
+# 3. Compatible with xargs - works in batch combinator context
+#
+# Phase 1 Issue #002: Error handling architecture

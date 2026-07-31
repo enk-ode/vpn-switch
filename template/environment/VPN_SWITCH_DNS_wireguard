@@ -1,0 +1,16 @@
+10.2.0.1
+# VPN_SWITCH_DNS_wireguard - WireGuard DNS server
+#
+# Default DNS server for WireGuard connections.
+# This follows the VPN_SWITCH_DNS_<protocol> naming convention for
+# protocol-agnostic DNS server lookup.
+#
+# Default: 10.2.0.1 (VPN provider WireGuard gateway)
+#
+# VPN provider's WireGuard service assigns IPs from 10.2.0.0/8 with gateway at 10.2.0.1
+# This DNS server is used when the WireGuard config doesn't specify DNS explicitly.
+#
+# Behavior:
+#   - Used as fallback if config doesn't contain DNS directives
+#   - Can be overridden per-database via setenv command
+#   - Configured via resolvconf and requires local_unbound reload

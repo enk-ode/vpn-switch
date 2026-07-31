@@ -1,0 +1,8 @@
+sh
+# Interpreter for _openvpn_connect1 - Connect script generation
+#
+# This function generates connect.sh and disconnect.sh phase-based scripts.
+# It MUST execute to write the script files, so interpreter is always 'sh'.
+#
+# This is included in the minimal profile because script generation is a core
+# operation that must work in all configurations.

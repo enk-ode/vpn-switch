@@ -1,0 +1,4 @@
+tun0
+# OpenVPN interface name (protocol-agnostic naming)
+# Used for dynamic lookup: VPN_SWITCH_INTERFACE_<protocol>
+# Default: tun0

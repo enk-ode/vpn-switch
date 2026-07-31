@@ -1,0 +1,4 @@
+wg0
+# WireGuard interface name (protocol-agnostic naming)
+# Used for dynamic lookup: VPN_SWITCH_INTERFACE_<protocol>
+# Default: wg0

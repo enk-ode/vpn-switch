@@ -1,0 +1,19 @@
+cat
+# Interpreter for 'vpn-switch openvpn info' command
+# Terminal function that outputs group information directly to user
+#
+# Default value: "cat"
+#   Outputs group details directly to stdout (no execution needed)
+#   Shows group metadata, path, and contents
+#
+# This is a terminal/display function - it should NOT execute commands.
+# Use 'cat' to send output directly to the user without interpretation.
+#
+# Example output:
+#   # Group: work
+#   # Path: /path/to/database/openvpn/work
+#   # Total links: 2
+#   # Contents:
+#   #   office -> ../us-server.ovpn
+#   #   remote -> ../eu-server.ovpn
+#

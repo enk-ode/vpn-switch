@@ -1,0 +1,11 @@
+sh
+# Interpreter for: status (TERMINAL FUNCTION)
+# Resolves to _status0 via right-to-left interpreter resolution
+#
+# Function role: Terminal function - generates status check commands
+# Output: Shell commands (pgrep, wg show, ifconfig)
+#
+# This interpreter executes commands to display current VPN connection status.
+#
+# Override for dry-run:
+#   echo "cat" > .env/local/VPN_SWITCH_INTERPRETER_status

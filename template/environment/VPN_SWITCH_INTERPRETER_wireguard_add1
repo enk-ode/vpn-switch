@@ -1,0 +1,13 @@
+sh
+# Interpreter for 'vpn-switch wireguard add <category>' command
+# Terminal function (_wireguard_add1) that creates category directories
+#
+# Default value: "sh"
+#   Executes shell commands output by _wireguard_add1
+#
+# Function behavior:
+#   Creates category directory: mkdir -p "$VPN_SWITCH_BASE/wireguard/$category"
+#   Sets permissions: chmod 0755 "$VPN_SWITCH_BASE/wireguard/$category"
+#
+# This is part of a HETEROGENEOUS family (mixed terminal/combinator functions).
+# See VPN_SWITCH_INTERPRETER_wireguard_add for family-level documentation.

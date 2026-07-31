@@ -1,0 +1,27 @@
+sh -c 'tmp=$(mktemp "$VPN_SWITCH_BASE/.tmp/batch.XXXXXX"); chmod 0600 "$tmp"; cat > "$tmp"; exec "$VPN_SWITCH_CONTEXT_SCRIPT" batch "$tmp" true'
+# Default interpreter for batch-combinator functions (triple underscore prefix: ___).
+#
+# Batch-combinator functions output multiple lines that need to be captured and processed.
+#
+# This interpreter:
+# 1. Creates secure temp file in $VPN_SWITCH_BASE/.tmp/
+# 2. Reads stdin (command lines from batch-combinator) into temp file
+# 3. Invokes 'batch <tempfile> true' to process commands
+# 4. Cleanup flag 'true' ensures temp file is removed after processing
+#
+# Note: .tmp/ directory is created by 'vpn-switch init' with proper permissions (0700)
+#
+# Since dispatch() now reads from VPN_SWITCH_CONTEXT_CALL instead of stdin,
+# stdin flows naturally through the pipeline to this interpreter. No quoting
+# gymnastics needed!
+#
+# Example flow:
+#   vpn-switch stop
+#   → ___stop0 outputs commands
+#   → Interpreter captures stdin to temp file
+#   → batch processes temp file
+#
+# For dry-run/inspection mode, override with 'cat'.
+#
+# Customization is available via VPN_SWITCH_INTERPRETER_batch2 to control
+# how individual commands within the batch are executed.

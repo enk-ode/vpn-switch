@@ -1,0 +1,6 @@
+/sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
+# PATH for command execution (colon-separated)
+# Used when running commands in isolated environment
+#
+# Default: Standard FreeBSD system paths
+# Adjust if commands are in non-standard locations

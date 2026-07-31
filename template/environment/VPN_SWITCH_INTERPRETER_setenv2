@@ -1,0 +1,25 @@
+sh
+# Interpreter for 'vpn-switch setenv <var> <value>' command
+# Terminal function that sets environment variables in .env/local/
+#
+# Default value: "sh"
+#   Executes commands to write variable to .env/local/ hierarchy
+#   Creates .env/local/ directory if needed with proper permissions (0700)
+#   Creates variable file with proper permissions (0600)
+#   Validates variable names (only letters, numbers, underscores)
+#
+# Function behavior:
+#   - Validates variable name format
+#   - Creates .env/local/ directory if needed
+#   - Writes value to .env/local/<var_name>
+#   - Shows confirmation message
+#
+# Example usage:
+#   vpn-switch setenv VPN_SWITCH_DISPLAY_ANSI 1
+#   vpn-switch setenv VPN_SWITCH_INTERPRETER_wireguard_connect sh
+#
+# Advanced - show commands without executing (for debugging):
+#   echo "cat" > .env/local/VPN_SWITCH_INTERPRETER_setenv
+#   vpn-switch setenv TEST_VAR value          # Show commands only
+#
+# See ARCHITECTURE.md for details on the environment hierarchy system
