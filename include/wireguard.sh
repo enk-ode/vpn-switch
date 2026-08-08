@@ -150,6 +150,12 @@ _wireguard_patch2() {
   local session_dir="$VPN_SWITCH_BASE/.session/$session_pid"
   local patched_config="$session_dir/${VPN_SWITCH_INTERFACE_wireguard}.conf"
 
+  # Keepalive to inject (0 disables, non-numeric falls back to the default)
+  local keepalive="${VPN_SWITCH_KEEPALIVE_wireguard:-25}"
+  case "$keepalive" in
+    ''|*[!0-9]*) keepalive=25 ;;
+  esac
+
   # Output shell commands (terminal function - normal form)
   cat <<EOF
 # Record original config
@@ -163,6 +169,27 @@ $MODIFY_FILE_PERMS 0640 "$patched_config"
 # Remove existing DNS hooks (DNS handled by DNS phase)
 $MODIFY_FILE_SED_INPLACE '/^PostUp.*resolvconf/d' "$patched_config"
 $MODIFY_FILE_SED_INPLACE '/^PostDown.*resolvconf/d' "$patched_config"
+EOF
+
+  # Keepalive: provider configs ship without PersistentKeepalive; without it
+  # the tunnel stays silent after NAT rebinds / link flaps until it is rebuilt
+  # by hand. Inject unless the source config sets one (an explicit config
+  # value always wins). Checking the source at generation time is equivalent
+  # to checking the patched copy: they differ only in the stripped DNS hooks.
+  # Keep in sync with patch_wireguard_config (used by 'wireguard patch').
+  if [ "$keepalive" -gt 0 ] && \
+     ! grep -qi '^[[:space:]]*PersistentKeepalive' "$config_path" 2>>"$LOG_FILE"; then
+    cat <<EOF
+
+# Keep tunnel alive across NAT rebinds / link flaps (source config has none).
+# The if-guard completes a missing trailing newline first, so the appended
+# line cannot glue onto the last config line.
+if [ -n "\$(tail -c1 "$patched_config")" ]; then echo >> "$patched_config"; fi
+printf 'PersistentKeepalive = %s\n' "$keepalive" >> "$patched_config"
+EOF
+  fi
+
+  cat <<EOF
 
 # Set read-only permissions
 $MODIFY_FILE_PERMS 0640 "$patched_config"
@@ -1502,15 +1529,34 @@ patch_wireguard_config() {
   local source_config="$1"
   local dest_config="$2"
 
+  # Keepalive to inject (0 disables, non-numeric falls back to the default)
+  local keepalive="${VPN_SWITCH_KEEPALIVE_wireguard:-25}"
+  case "$keepalive" in
+    ''|*[!0-9]*) keepalive=25 ;;
+  esac
+
   # Phase-based approach: Strip existing DNS hooks (DNS handled by DNS phase)
   # Simply remove PostUp/PostDown lines that contain resolvconf
-  awk '
+  #
+  # Keepalive: provider configs ship without PersistentKeepalive; without it
+  # the tunnel stays silent after NAT rebinds / link flaps until it is rebuilt
+  # by hand. Inject the configured value into the last [Peer] section unless
+  # the config sets one itself (an explicit config value always wins).
+  awk -v keepalive="$keepalive" '
     # Skip PostUp/PostDown lines that contain resolvconf (DNS hooks)
     /^PostUp.*resolvconf/ { next }
     /^PostDown.*resolvconf/ { next }
 
+    # Track an existing PersistentKeepalive (wg parses keys case-insensitively)
+    tolower($1) ~ /^persistentkeepalive/ { seen = 1 }
+
     # Print all other lines
     { print }
+
+    END {
+      if (keepalive + 0 > 0 && !seen)
+        print "PersistentKeepalive = " keepalive
+    }
   ' "$source_config" > "$dest_config"
 
   $MODIFY_FILE_PERMS 0640 "$dest_config"

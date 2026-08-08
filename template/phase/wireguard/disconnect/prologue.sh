@@ -94,8 +94,12 @@ output_variables
 #     in the emitted file) expands when the disconnect script actually
 #     runs. Distinct marker name to avoid collision with EOF.
 #
-# Output line keeps the defensive "# " prefix so the cut -b3- interpreter
-# strips it cleanly to the user-visible "Disconnecting ... (session: N)".
+# The banner goes to stderr like all phase progress output: stdout of
+# disconnect.sh runs through the buffered cut -b3- interpreter pipe, which
+# flushes only at process exit - the banner then surfaces AFTER the phase
+# output of the whole switch, wrongly suggesting a trailing disconnect.
+# On stderr it appears unbuffered, before the phases it announces (and
+# needs no defensive "# " prefix, since cut never sees it).
 #
 # The previous attempt nested two EOF heredocs which the shell parsed as
 # a single unterminated quoted string, producing garbled output through
@@ -105,8 +109,8 @@ output_variables
 #   94)
 cat <<EOF
 # Inform user about disconnection
-cat <<DISCONNECT_MSG
-# Disconnecting WireGuard interface: \$interface (session: $VPN_SESSION_PID)
+cat <<DISCONNECT_MSG >&2
+Disconnecting WireGuard interface: \$interface (session: $VPN_SESSION_PID)
 DISCONNECT_MSG
 
 # =============================================================================

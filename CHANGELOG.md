@@ -18,6 +18,11 @@ capabilities present at 1.0.
 - Protocol-agnostic `start` / `stop` / `status`. `start` auto-detects the
   protocol and, with no argument, resumes the default session or picks one at
   random.
+- Patched WireGuard configs get `PersistentKeepalive` injected when the
+  provider config sets none, so tunnels survive NAT rebinds and link flaps
+  instead of staying silent until rebuilt by hand. Default 25 s, configurable
+  via `VPN_SWITCH_KEEPALIVE_wireguard` (`0` disables, an explicit value in the
+  config always wins).
 
 **Configuration database**
 

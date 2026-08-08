@@ -230,6 +230,12 @@ VPN_SWITCH_INTERFACE_wireguard       # WireGuard interface (default: wg0)
 VPN_SWITCH_INTERFACE_openvpn         # OpenVPN interface (default: tun0)
 ```
 
+### WireGuard Keepalive
+```bash
+VPN_SWITCH_KEEPALIVE_wireguard       # PersistentKeepalive injected into patched
+                                     # configs lacking one (default: 25, 0=disable)
+```
+
 ### Profiles (chosen at bootstrap)
 ```bash
 minimal                              # Cache only the essential variables (recommended)

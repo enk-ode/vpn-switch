@@ -1,0 +1,20 @@
+25
+# VPN_SWITCH_KEEPALIVE_wireguard - PersistentKeepalive for patched configs
+#
+# Injected into patched WireGuard configs as "PersistentKeepalive = <value>"
+# (seconds) when the source config does not set PersistentKeepalive itself.
+#
+# Default: 25 (the wg(8)-recommended value for NAT / stateful-firewall traversal)
+#
+# Rationale: Provider configs (e.g. ProtonVPN) ship without PersistentKeepalive.
+# Behind NAT or on flapping links (WLAN) the tunnel then stays silent after a
+# link drop; stateful gateways expire the UDP mapping and the tunnel appears
+# dead until it is rebuilt by hand.
+#
+# Behavior:
+#   - A PersistentKeepalive line in the source config always wins (never overridden)
+#   - Set to 0 to disable injection entirely
+#   - Non-numeric values fall back to the default
+#   - Injected at the end of the config, i.e. into the last [Peer] section;
+#     multi-peer configs should set the value per peer in the config itself
+#   - Applies to both the session patch (connect) and 'wireguard patch' output

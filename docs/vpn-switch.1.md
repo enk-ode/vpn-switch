@@ -339,6 +339,12 @@ Inspect current state and check health.
 **VPN_SWITCH_INTERFACE_wireguard**, **VPN_SWITCH_INTERFACE_openvpn**
 :   Interface names for each protocol. Defaults: **wg0** and **tun0**.
 
+**VPN_SWITCH_KEEPALIVE_wireguard**
+:   PersistentKeepalive (seconds) injected into patched WireGuard configs
+    that do not set one themselves; an explicit value in the config always
+    wins. Keeps tunnels alive across NAT rebinds and link flaps.
+    Default: **25**. Set to **0** to disable injection.
+
 **VPN_SWITCH_RETENTION_DAYS_LOG**, **VPN_SWITCH_RETENTION_DAYS_TRACE**
 :   Days to retain log/trace files. Default: 1. Set to 0 to disable logging.
     Higher values useful during debugging.

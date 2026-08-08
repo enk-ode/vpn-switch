@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # === AUTO-GENERATED METADATA (make metadata) ===
-# Generated: 2026-07-31 10:21:29
+# Generated: 2026-08-08 09:14:47
 # Terminal functions (single underscore): output shell commands
 # Combinator functions (double underscore): output single vpn-switch command
 # Batch-combinator functions (triple underscore): output multiple vpn-switch commands
@@ -930,6 +930,14 @@ EOF
     grep -i "post" "$session_dir/${test_interface}.conf" || true
   else
     pass "Patched config correctly strips PostDown hook (phase-based DNS)"
+  fi
+
+  # Keepalive injected (source config has none; default is 25)
+  if grep -q "^PersistentKeepalive = 25$" "$session_dir/${test_interface}.conf"; then
+    pass "Patched config injects PersistentKeepalive (default 25)"
+  else
+    fail "Patched config should inject 'PersistentKeepalive = 25'"
+    cat "$session_dir/${test_interface}.conf" || true
   fi
 
   # Cleanup: Stop the VPN session to avoid interfering with subsequent tests
@@ -3371,6 +3379,14 @@ CONF
     fail "Patch output lost [Peer] section"
   fi
 
+  # Keepalive injected (source config has none; default is 25)
+  if printf '%s\n' "$output" | grep -q "^PersistentKeepalive = 25$"; then
+    pass "Patch output injects PersistentKeepalive (default 25)"
+  else
+    fail "Patch output should inject 'PersistentKeepalive = 25'"
+    printf '%s\n' "Output: $output"
+  fi
+
   # Cleanup
   rm -f "$test_config"
 }
@@ -3426,6 +3442,80 @@ CONF
 
   # Cleanup
   rm -f "$test_config"
+}
+
+# TEST 53a: wireguard patch - PersistentKeepalive injection rules
+test_wireguard_patch_keepalive() {
+  test_header "wireguard patch - PersistentKeepalive injection rules" "test_wireguard_patch_keepalive"
+  test_setup
+  override_for_command_inspection "wireguard_patch"
+
+  # Enable execution for wireguard import (narrow override)
+  set_function_interpreter "wireguard_import1" "sh"
+
+  # Config that sets PersistentKeepalive itself - the explicit value must win
+  local test_config="/tmp/wg-TEST-KEEPALIVE-1.conf"
+  # Cleanup first (in case previous run failed before cleanup)
+  rm -f "$test_config"
+  cat > "$test_config" <<'CONF'
+[Interface]
+PrivateKey = test123
+Address = 10.2.0.2/32
+
+[Peer]
+PublicKey = server123
+AllowedIPs = 0.0.0.0/0
+Endpoint = 1.2.3.4:51820
+PersistentKeepalive = 7
+CONF
+  chmod 0400 "$test_config"
+
+  run_vpn_switch wireguard import "$test_config" >/dev/null 2>&1
+  local output=$(run_vpn_switch wireguard patch wg-TEST-KEEPALIVE-1.conf 2>&1)
+
+  if printf '%s\n' "$output" | grep -q "^PersistentKeepalive = 7$"; then
+    pass "Explicit PersistentKeepalive from config preserved"
+  else
+    fail "Explicit PersistentKeepalive from config lost"
+    printf '%s\n' "Output: $output"
+  fi
+
+  if printf '%s\n' "$output" | grep -q "^PersistentKeepalive = 25$"; then
+    fail "Default keepalive must not be injected next to an explicit one"
+    printf '%s\n' "Output: $output"
+  else
+    pass "No duplicate keepalive injected"
+  fi
+
+  # VPN_SWITCH_KEEPALIVE_wireguard=0 disables injection entirely
+  local test_config2="/tmp/wg-TEST-KEEPALIVE-2.conf"
+  rm -f "$test_config2"
+  cat > "$test_config2" <<'CONF'
+[Interface]
+PrivateKey = test123
+Address = 10.2.0.2/32
+
+[Peer]
+PublicKey = server123
+AllowedIPs = 0.0.0.0/0
+Endpoint = 1.2.3.4:51820
+CONF
+  chmod 0400 "$test_config2"
+
+  run_vpn_switch wireguard import "$test_config2" >/dev/null 2>&1
+  run_vpn_switch setenv VPN_SWITCH_KEEPALIVE_wireguard 0 >/dev/null 2>&1
+  output=$(run_vpn_switch wireguard patch wg-TEST-KEEPALIVE-2.conf 2>&1)
+  run_vpn_switch unsetenv VPN_SWITCH_KEEPALIVE_wireguard >/dev/null 2>&1
+
+  if printf '%s\n' "$output" | grep -qi "PersistentKeepalive"; then
+    fail "Keepalive injected although VPN_SWITCH_KEEPALIVE_wireguard=0"
+    printf '%s\n' "Output: $output"
+  else
+    pass "VPN_SWITCH_KEEPALIVE_wireguard=0 disables injection"
+  fi
+
+  # Cleanup
+  rm -f "$test_config" "$test_config2"
 }
 
 # TEST 54: wireguard info - displays category information
@@ -7149,6 +7239,7 @@ main() {
   should_run_test test_wireguard_patch_valid
   should_run_test test_wireguard_patch_nonexistent
   should_run_test test_wireguard_patch_absolute
+  should_run_test test_wireguard_patch_keepalive
 
   # Config management: info operations
   should_run_test test_wireguard_info_category
