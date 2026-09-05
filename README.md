@@ -1,4 +1,4 @@
-# vpn-switch
+# [vpn-switch](https://enk-ode.github.io/vpn-switch/)
 
 A POSIX-shell-based VPN connection manager for FreeBSD and Linux. Handles
 WireGuard and OpenVPN, automates firewall and DNS integration, and lets
@@ -29,7 +29,7 @@ VPN provider documentation typically tells you: download a config file, run
 DNS, repeat the inverse on disconnect. For a single config that's tolerable.
 For dozens of configs across countries, protocols, and purposes, it isn't.
 
-vpn-switch organises VPN configurations as a **filesystem database** — directories
+[vpn-switch](https://enk-ode.github.io/vpn-switch/) organises VPN configurations as a **filesystem database** — directories
 group configurations by purpose, symlinks express defaults and named sessions,
 and a small set of commands does the rest:
 
@@ -107,7 +107,7 @@ Heading toward the first public release (1.0). Recent milestones:
 
 ## Architecture at a glance
 
-vpn-switch is built around a **combinator pattern**: every command is one
+[vpn-switch](https://enk-ode.github.io/vpn-switch/) is built around a **combinator pattern**: every command is one
 of three function types — terminal (`_`), combinator (`__`), or batch
 combinator (`___`) — and each function outputs the next rewrite step
 rather than executing side effects directly. Per-function "interpreters"
@@ -132,7 +132,7 @@ For the full picture, see [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 Provider config files are usually written for Linux — a WireGuard file, for
 example, embeds `PostUp`/`PostDown` DNS hooks that call Linux's `resolvconf`.
-vpn-switch never runs the downloaded file as-is: at start time it **patches** a
+[vpn-switch](https://enk-ode.github.io/vpn-switch/) never runs the downloaded file as-is: at start time it **patches** a
 session copy — stripping those Linux-specific hooks (DNS is handed to the DNS
 phase instead) and, for OpenVPN, injecting the up/down scripts, daemon mode,
 and the interface. One config then works on FreeBSD and Linux alike. Preview it
