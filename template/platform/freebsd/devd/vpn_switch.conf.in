@@ -1,0 +1,16 @@
+# vpn_switch.conf - devd(8) rule installed by 'gmake install' (FreeBSD).
+#
+# Whenever the uplink @IFNAME@ reports LINK_UP (boot, cable back, lagg
+# failover), ask the vpn_switch service to bring the saved default session up.
+# 'linkup' is a no-op unless vpn_switch_enable=YES and no session is connected,
+# so the rule is harmless while the service is disabled. The interface name is
+# substituted at install time (gmake install VPN_SWITCH_RC_IFNAME=...).
+#
+# devd re-reads its configuration on restart: service devd restart
+
+notify 100 {
+	match "system"		"IFNET";
+	match "subsystem"	"@IFNAME@";
+	match "type"		"LINK_UP";
+	action "service vpn_switch linkup";
+};

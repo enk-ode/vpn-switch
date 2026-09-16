@@ -1,6 +1,10 @@
 #!/bin/sh
 # VPN phase for WireGuard connection
 # Brings up WireGuard interface using wg-quick
+#
+# Environment:
+#   VPN_SWITCH_BINARY_wireguard  path of the wireguard binary invoked
+#   (details: vpn-switch helpenv <VAR>)
 
 # Unpack context variables (for generation-time expansion)
 eval "$VPN_SWITCH_CONTEXT_CONNECT"

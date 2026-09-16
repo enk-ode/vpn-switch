@@ -529,6 +529,7 @@ EOF
 
 #@help _openvpn_patch1
 # @command openvpn patch <config>
+# @completion config openvpn-config
 # @summary Preview the patched config that would be used to connect
 # @group   openvpn
 # @param   config  config to preview
@@ -750,6 +751,7 @@ _openvpn_list1() {
 
 #@help _openvpn_add1
 # @command openvpn add <group> [<config> [<alias>]]
+# @completion config openvpn-config
 # @summary Create a group, or link a config into one
 # @group   openvpn
 # @param   group   group to create or add to
@@ -872,6 +874,7 @@ EOF
 
 #@help _openvpn_link2
 # @command openvpn link <alias> <target>
+# @completion target openvpn-config
 # @summary Create a protocol-level alias to a config
 # @group   openvpn
 # @param   alias   new alias name
@@ -909,6 +912,7 @@ EOF
 
 #@help _openvpn_remove1
 # @command openvpn remove <name>
+# @completion name openvpn-config
 # @summary Remove a config or link (with safety checks)
 # @group   openvpn
 # @param   name  config or link to remove

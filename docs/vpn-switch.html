@@ -2,7 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head>
   <meta charset="utf-8" />
-  <meta name="generator" content="pandoc 3.10" />
+  <meta name="generator" content="pandoc 3.10.1" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <meta name="author" content="Dr. Johannes Brügmann" />
   <title>vpn-switch(1) | VPN connection manager</title>
@@ -169,6 +169,11 @@ Create a new database at &lt;path&gt; with the named profile
 <dd>
 Show top-level help, or help for a command group or topic
 </dd>
+<dt><strong>complete [&lt;words&gt;]</strong></dt>
+<dd>
+Print completion candidates for a partially typed command line
+(bash-completion back-end)
+</dd>
 </dl>
 <h2 id="connection">Connection</h2>
 <p>Bring tunnels up and down, and keep the database in sync with the
@@ -233,7 +238,7 @@ Save the most-recent session under a name for later resumption
 </dd>
 <dt><strong>session clean</strong></dt>
 <dd>
-Generate cleanup commands for stale/orphaned sessions
+Remove stale session symlinks and orphaned sessions
 </dd>
 <dt><strong>session refresh</strong></dt>
 <dd>
@@ -363,7 +368,7 @@ Remove a variable from .env/local/
 <dd>
 Show all effective environment variables, or just one
 </dd>
-<dt><strong>helpenv [&lt;name&gt; [location]]</strong></dt>
+<dt><strong>helpenv [&lt;name&gt; [&lt;location&gt;]]</strong></dt>
 <dd>
 Show env-var documentation (value + docs); with no argument, list all
 </dd>
@@ -376,7 +381,7 @@ Set an interpreter (shortcut for setenv of the resolved interpreter var)
 Show an interpreter (shortcut for getenv of the resolved interpreter
 var)
 </dd>
-<dt><strong>helpintp &lt;fn&gt; [location]</strong></dt>
+<dt><strong>helpintp &lt;fn&gt; [&lt;location&gt;]</strong></dt>
 <dd>
 Show docs for an interpreter variable (class default or per-function)
 </dd>
@@ -461,6 +466,13 @@ vpn dns” and “dns vpn firewall” respectively. Set to omit phases
 <dd>
 Interface names for each protocol. Defaults: <strong>wg0</strong> and
 <strong>tun0</strong>.
+</dd>
+<dt><strong>VPN_SWITCH_KEEPALIVE_wireguard</strong></dt>
+<dd>
+PersistentKeepalive (seconds) injected into patched WireGuard configs
+that do not set one themselves; an explicit value in the config always
+wins. Keeps tunnels alive across NAT rebinds and link flaps. Default:
+<strong>25</strong>. Set to <strong>0</strong> to disable injection.
 </dd>
 <dt><strong>VPN_SWITCH_RETENTION_DAYS_LOG</strong>,
 <strong>VPN_SWITCH_RETENTION_DAYS_TRACE</strong></dt>

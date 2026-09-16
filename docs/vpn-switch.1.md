@@ -121,6 +121,9 @@ fresh install.
 **help [\<subcommand\>]**
 :   Show top-level help, or help for a command group or topic
 
+**complete [\<words\>]**
+:   Print completion candidates for a partially typed command line (bash-completion back-end)
+
 ## Connection
 
 Bring tunnels up and down, and keep the database in sync with the source.
@@ -167,7 +170,7 @@ metadata. Save, resume, inspect and reconcile them.
 :   Save the most-recent session under a name for later resumption
 
 **session clean**
-:   Generate cleanup commands for stale/orphaned sessions
+:   Remove stale session symlinks and orphaned sessions
 
 **session refresh**
 :   Reconcile interface ownership with the loaded peers
@@ -264,7 +267,7 @@ Read and change vpn-switch environment variables.
 **printenv [\<VAR\>]**
 :   Show all effective environment variables, or just one
 
-**helpenv [\<name\> [location]]**
+**helpenv [\<name\> [\<location\>]]**
 :   Show env-var documentation (value + docs); with no argument, list all
 
 **setintp \<fn\> \<value\>**
@@ -273,7 +276,7 @@ Read and change vpn-switch environment variables.
 **getintp \<fn\>**
 :   Show an interpreter (shortcut for getenv of the resolved interpreter var)
 
-**helpintp \<fn\> [location]**
+**helpintp \<fn\> [\<location\>]**
 :   Show docs for an interpreter variable (class default or per-function)
 
 **environment inspect**

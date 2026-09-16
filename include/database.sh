@@ -4,6 +4,7 @@
 
 #@help __bootstrap1
 # @command bootstrap <path> <profile>
+# @completion path dirs
 # @summary Create a new database at <path> with the named profile
 # @group   setup
 # @param   path     directory to create the database in
@@ -478,6 +479,7 @@ __init0() {
 # @example vpn-switch setenv VPN_SWITCH_DISPLAY_ANSI 1
 # @see     getenv
 # @see     unsetenv
+# @env VPN_SWITCH_CACHE_ENV_ARGS  invalidated so the change takes effect next run
 #@end
 _setenv2() {
   local var_name="$1"
@@ -583,6 +585,7 @@ _getenv1() {
 # @returns shell commands (remove the local override)
 # @example vpn-switch unsetenv VPN_SWITCH_DISPLAY_ANSI
 # @see     setenv
+# @env VPN_SWITCH_CACHE_ENV_ARGS  invalidated so the removal takes effect next run
 #@end
 _unsetenv1() {
   local var_name="$1"
@@ -997,6 +1000,7 @@ _batch2() {
 # @group   database
 # @param   file  dump file produced by 'dump'
 # @returns shell commands (replay the dump)
+# @env     VPN_SWITCH_BATCH_KEEP_GOING  0 = stop at the first failing line, 1 = replay everything
 # @example vpn-switch restore backup.sh
 # @see     dump
 #@end
@@ -1054,3 +1058,346 @@ echo "# ========================================================================
 EOF
 }
 
+
+# --- sync, version, import, list, link, remove (out of vpn-switch.sh, 15.09.2026) ---
+
+# ___sync0 - Top-level sync orchestrator (batch combinator)
+#
+# Output: three vpn-switch subcommands to refresh the DB from source.
+#
+# Usage: vpn-switch sync
+#
+# Refreshes the user's database (.env/default/, .include/phase/, .version)
+# against the system-wide source templates. Idempotent: safe to run after
+# every source upgrade. Per-user customisations in .env/local/ are not
+# touched.
+#
+#@help ___sync0
+# @command sync
+# @summary Refresh the database from installed source templates
+# @group   connection
+# @returns shell commands (phases sync + env sync + version sync)
+# @example vpn-switch sync
+# @see     version
+#@end
+___sync0() {
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" phases sync"
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" env sync"
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" version sync"
+}
+
+# _env_sync0 - Refresh .env/default/ from environment templates (terminal)
+#
+# Output: shell commands to copy template/environment/* into the
+# database's .env/default/. Existing .env/local/ overrides are not
+# affected — only the bootstrap defaults are refreshed.
+#
+# Usage: vpn-switch env sync
+#
+#@help _env_sync0
+# @command env sync
+# @summary Refresh environment defaults in .env/default/ from source templates
+# @group   database
+# @returns shell commands (refresh .env/default)
+# @example vpn-switch env sync
+# @see     sync
+# @env VPN_SWITCH_TEMPLATE_DIR    source of the variable templates
+# @env VPN_SWITCH_CACHE_ENV_ARGS  invalidated so the sync takes effect next run
+#@end
+_env_sync0() {
+  local base="$VPN_SWITCH_BASE"
+
+  cat <<EOF
+# Sync environment defaults from templates.
+# Directory perms 0700 (owner traverse), per-file 0600 (owner r/w).
+# We don't use chmod -R 0600 because that would strip the directory's
+# traverse bit during the recursive walk and lock us out.
+if [ -d "$VPN_SWITCH_TEMPLATE_DIR/environment" ]; then
+  $MODIFY_DIR_CREATE "$base/.env/default"
+  $MODIFY_FILE_PERMS 0700 "$base/.env/default"
+  $MODIFY_FILE_COPY_FORCE "$VPN_SWITCH_TEMPLATE_DIR/environment/"* "$base/.env/default/"
+  for f in "$base/.env/default"/*; do
+    [ -f "\$f" ] && $MODIFY_FILE_PERMS 0600 "\$f"
+  done
+  echo "# Synced env defaults from: $VPN_SWITCH_TEMPLATE_DIR/environment/"
+  # Invalidate a live env cache: build_env_args reads the cache file verbatim
+  # and never re-scans, so freshly synced defaults stay invisible until the
+  # cache is dropped. Same convention as _environment_init1 / _setenv2.
+  if [ -f "$base/.env/local/VPN_SWITCH_CACHE_ENV_ARGS" ]; then
+    $MODIFY_FILE_REMOVE "$base/.env/local/VPN_SWITCH_CACHE_ENV_ARGS"
+    echo "# Cache invalidated (rebuild with: environment cache on)"
+  fi
+else
+  echo "# Error: Environment template directory not found: $VPN_SWITCH_TEMPLATE_DIR/environment" >&2
+  exit 1
+fi
+EOF
+}
+
+# _version_sync0 - Write .version with current source version (terminal)
+#
+# Output: shell commands to copy template/VERSION into the database
+# root as .version. Used to track which source-tree commit the DB
+# was last synced against.
+#
+# Usage: vpn-switch version sync
+#
+#@help _version_sync0
+# @command version sync
+# @summary Stamp the database's .version with the source's current SHA
+# @group   database
+# @returns shell commands (write the version marker)
+# @example vpn-switch version sync
+# @see     sync
+# @env VPN_SWITCH_TEMPLATE_DIR  where template/VERSION is written
+#@end
+_version_sync0() {
+  local base="$VPN_SWITCH_BASE"
+
+  cat <<EOF
+# Sync DB version marker
+if [ -f "$VPN_SWITCH_TEMPLATE_DIR/VERSION" ]; then
+  $MODIFY_FILE_COPY_FORCE "$VPN_SWITCH_TEMPLATE_DIR/VERSION" "$base/.version"
+  $MODIFY_FILE_PERMS 0600 "$base/.version"
+  echo "# DB synced to source version: \$(cat "$base/.version")"
+else
+  echo "# Warning: source VERSION file not found at $VPN_SWITCH_TEMPLATE_DIR/VERSION" >&2
+  echo "# Skipping .version update — run 'gmake metadata' in the source tree to regenerate" >&2
+fi
+EOF
+}
+
+# _version0 - Report version state of the DB (terminal, info-style)
+#
+# All filesystem inspection happens here at generation time. The output
+# is the final display text; the default 'cat' interpreter passes it
+# through unchanged (same pattern as _help0 / _printenv0).
+#
+# Format (stable, machine-parseable for tests/tooling):
+#   db: <sha-from-.version | "unstamped">
+#   source: <sha-from-template/VERSION | "missing">
+#
+# Usage: vpn-switch version
+#
+#@help _version0
+# @command version
+# @summary Report the database and source SHAs (drift means run 'sync')
+# @group   connection
+# @returns two lines: db SHA and source SHA
+# @example vpn-switch version
+# @see     sync
+# @env VPN_SWITCH_TEMPLATE_DIR  where template/VERSION is read from
+#@end
+_version0() {
+  local db_version source_version
+
+  if [ -f "$VPN_SWITCH_BASE/.version" ]; then
+    db_version=$(cat "$VPN_SWITCH_BASE/.version")
+  else
+    db_version="unstamped"
+  fi
+
+  if [ -f "$VPN_SWITCH_TEMPLATE_DIR/VERSION" ]; then
+    source_version=$(cat "$VPN_SWITCH_TEMPLATE_DIR/VERSION")
+  else
+    source_version="missing"
+  fi
+
+  printf 'db: %s\n' "$db_version"
+  printf 'source: %s\n' "$source_version"
+}
+
+#-----------------------------------------------------------------------------
+# Protocol-Agnostic Commands
+#-----------------------------------------------------------------------------
+
+# _import1 - Protocol-agnostic import (wrapper)
+#
+# Args: $1 - Path to config file
+# Output: Delegates to protocol-specific import
+#
+# Detects protocol from file extension and delegates to protocol-specific function
+#
+#@help __import1
+# @internal protocol-agnostic router for 'import'
+#@end
+__import1() {
+  local source_path="$1"
+  local filename=$(basename "$source_path")
+
+  # Extract extension
+  local ext=""
+  case "$filename" in
+    *.*) ext="${filename##*.}" ;;
+  esac
+
+  if [ -z "$ext" ]; then
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"import: file has no extension: $filename\""
+    return
+  fi
+
+  # Resolve protocol from extension link (Phase 3.4.1)
+  if [ -L "$VPN_SWITCH_BASE/$ext" ]; then
+    local link_target
+    link_target=$(readlink "$VPN_SWITCH_BASE/$ext" 2>>"$LOG_FILE")
+    if [ $? -ne 0 ]; then
+      echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"import: failed to resolve extension link: $ext\""
+      return
+    fi
+
+    local protocol
+    protocol=$(basename "$link_target")
+
+    # Validate protocol directory exists
+    if [ ! -d "$VPN_SWITCH_BASE/$protocol" ]; then
+      echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"import: extension link '$ext' points to non-existent protocol '$protocol'\""
+      return
+    fi
+
+    # Delegate to protocol-specific import
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" $protocol import \"$source_path\""
+  else
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"import: unknown extension '$ext' \\(no extension link found\\)\" \"Create link: cd \$VPN_SWITCH_BASE && ln -sf <protocol> $ext\""
+    return
+  fi
+}
+
+# ___list0 - List all protocols (protocol-agnostic, Phase 3.4.1)
+#
+# Output: Delegates to protocol-specific list commands
+#
+# Batch-combinator function: Outputs multiple vpn-switch commands for batch execution
+# Discovers all protocols dynamically and delegates to their list functions
+#
+#@help ___list0
+# @internal protocol-agnostic router for 'list'
+#@end
+___list0() {
+  # Discover protocols and delegate to each
+  for dir in "$VPN_SWITCH_BASE"/*; do
+    # Skip symlinks (extension links like conf→wireguard/)
+    [ -L "$dir" ] && continue
+    [ -d "$dir" ] || continue
+    proto=$(basename "$dir")
+
+    # Skip pseudo-protocols
+    is_pseudo_protocol "$proto" && continue
+
+    # Delegate to protocol-specific list
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" $proto list"
+  done
+}
+
+# _link2 - Create protocol-level symlink in base directory
+#
+# Args: $1 - Alias name
+#       $2 - Protocol name
+# Output: Shell commands to create symlink
+#
+# Creates a symlink in base directory pointing to protocol directory.
+# Used for: vpn-switch link default wireguard
+#
+#@help _link2
+# @internal protocol-agnostic router for 'link'
+#@end
+_link2() {
+  local alias="$1"
+  local protocol="$2"
+  local base_dir="$VPN_SWITCH_BASE"
+  local alias_path="$base_dir/$alias"
+  local protocol_path="$base_dir/$protocol"
+
+  # Validate protocol directory exists
+  if [ ! -d "$protocol_path" ]; then
+    generate_error "Protocol directory not found: $protocol"
+    return 0
+  fi
+
+  # Check if alias already exists (file, link, or directory)
+  if [ -e "$alias_path" ] || [ -L "$alias_path" ]; then
+    generate_error "Alias already exists: $alias"
+    return 0
+  fi
+
+  # Output commands to create symlink (relative path)
+  cat <<EOF
+# Create protocol-level link: $alias -> $protocol
+$MODIFY_LINK_CREATE "./$protocol" "$alias_path"
+echo "# Created protocol link: $alias -> $protocol" >&2
+EOF
+}
+
+# _remove1 - Remove protocol-level link from base directory
+#
+# Args: $1 - Alias name
+# Output: Shell commands to remove link
+#
+# Removes a symlink from base directory (created by _link2).
+# Used for: vpn-switch remove default
+#
+#@help _remove1
+# @internal protocol-agnostic router for 'remove'
+#@end
+_remove1() {
+  local alias="$1"
+  local base_dir="$VPN_SWITCH_BASE"
+  local alias_path="$base_dir/$alias"
+
+  # Validate alias exists
+  if [ ! -e "$alias_path" ] && [ ! -L "$alias_path" ]; then
+    generate_error "Link not found: $alias"
+    return 0
+  fi
+
+  # Validate it's a symlink (not a file or directory)
+  if [ ! -L "$alias_path" ]; then
+    generate_error "Not a symlink: $alias" "Use appropriate command for files or directories"
+    return 0
+  fi
+
+  # Output commands to remove symlink
+  cat <<EOF
+# Remove protocol-level link: $alias
+$MODIFY_LINK_REMOVE "$alias_path"
+echo "Removed protocol link: $alias"
+EOF
+}
+
+#-----------------------------------------------------------------------------
+# Config Management Commands - Validate and Clean
+#-----------------------------------------------------------------------------
+
+#-----------------------------------------------------------------------------
+# OpenVPN Config Management Commands
+#-----------------------------------------------------------------------------
+
+# process_arguments - Core command execution logic with optional tracing
+#
+# Processes command-line arguments through the combinator system:
+# 1. Resolves args to function call via to_function_call()
+# 2. Looks up correct interpreter via lookup_interpreter()
+# 3. Executes via dispatch | run_env -- $interpreter
+#
+# This is the core execution path used by both:
+# - main() for top-level commands
+# - _batch2() for batch-file commands
+#
+# The key difference from hardcoding an interpreter:
+# - Each command gets its CORRECT interpreter (terminal, combinator, or batch_combinator)
+# - lookup_interpreter() uses intrinsic classification (underscore count)
+# - Ensures proper execution semantics for all command types
+#
+# Tracing support:
+# - If VPN_SWITCH_TRACE_FILE is set, enables detailed execution tracing
+# - Tracing flows continuously through nested calls (including batch execution)
+# - Validates trace file path to prevent accidental corruption
+#
+# Args: $@ - command-line arguments (e.g., "wireguard start privacy")
+# Returns: Exit code from executed command
+#
+# Example:
+#   process_arguments wireguard start privacy
+#   → Resolves to __wireguard_start1
+#   → Looks up combinator interpreter
+#   → Executes via dispatch with optional tracing
+#

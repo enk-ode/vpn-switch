@@ -12,6 +12,38 @@ capabilities present at 1.0.
 
 ### Added
 
+**Boot integration (FreeBSD)**
+
+- The rc.d service `vpn_switch` now does what its name promises: it brings
+  the saved default session up at boot, ordered before `ntpdate`/`ntpd`/
+  `openntpd` (a firewall that only lets the tunnel out leaves the time
+  daemons without DNS until the VPN egress exists), after waiting for the
+  uplink to have link and an address. A devd rule (`etc/devd/vpn_switch.conf`)
+  calls `service vpn_switch linkup` whenever the uplink reports `LINK_UP`;
+  both paths are no-ops while a session is connected.
+- The service runs vpn-switch as the database owner. `gmake install`
+  derives user, database (`~/.vpn-switch/db`) and uplink (default `lagg0`)
+  from `SUDO_USER` and writes them to `etc/rc.conf.d/vpn_switch` once;
+  `VPN_SWITCH_RC_USER` / `VPN_SWITCH_RC_IFNAME` override at install time.
+  The previous placeholder script (credentials.txt under /data/vpn, a start
+  that only ran `status`) is gone.
+
+**Shell completion**
+
+- `vpn-switch complete <words...>` prints completion candidates for a
+  partially typed command line, derived from the `#@help` corpus: command
+  words from the `@command` usages, placeholder values (configs, categories,
+  sessions, variables, phases, profiles) from the database. New corpus tags
+  `@defcompletion <placeholder> <source>` (one table in `include/help.sh`) and
+  `@completion <placeholder> <source>` (per-command override); architecture
+  test C fails if a usage placeholder has no source.
+- `completion/vpn-switch.bash`: the bash side, a thin loop over that output,
+  installed to `share/bash-completion/completions/vpn-switch` by `gmake
+  install`. Existing databases pick up the display pin with `vpn-switch env
+  sync`.
+- Usage lines `helpenv [<name> [<location>]]` and `helpintp <fn> [<location>]`
+  now write the layer placeholder in angle brackets like every other one.
+
 **Protocols & connection**
 
 - WireGuard and OpenVPN support behind a shared command surface.

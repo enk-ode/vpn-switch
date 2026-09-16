@@ -1,102 +1,134 @@
 #!/bin/sh
 #
-# vpnswitch - FreeBSD rc.d script for vpn-switch daemon
-# Add to /etc/rc.conf: vpnswitch_enable="YES"
+# vpn_switch - bring up the saved default VPN session at boot and whenever
+# the uplink comes back, BEFORE the time daemons: with a firewall that lets
+# nothing but the tunnel out, ntpd/openntpd cannot even resolve their
+# servers until the VPN egress exists.
 #
-
-# PROVIDE: vpnswitch
-# REQUIRE: NETWORKING DAEMON cleanvar
-# BEFORE: LOGIN
+# Runs vpn-switch as the user whose database holds the sessions (set at
+# install time from the user running 'sudo gmake install'), so files under
+# the database keep their owner. That user needs passwordless sudo for the
+# connect steps (wg-quick, pfctl, resolvconf), see docs/INSTALL.md.
+#
+# PROVIDE: vpn_switch
+# REQUIRE: NETWORKING pf devd
+# BEFORE:  ntpdate ntpd openntpd LOGIN
 # KEYWORD: shutdown
+#
+# /etc/rc.conf or /usr/local/etc/rc.conf.d/vpn_switch (written by the installer):
+#   vpn_switch_enable="YES"
+#   vpn_switch_user="brj"                        # owner of the database
+#   vpn_switch_base="/home/<user>/.vpn-switch/db"   # VPN_SWITCH_BASE for that user
+#   vpn_switch_ifname="lagg0"                    # uplink to wait for
+#   vpn_switch_wait="30"                         # seconds to wait for link + address
+#   vpn_switch_session=""                        # saved session; empty = 'default'
+#
+# The devd rule /usr/local/etc/devd/vpn_switch.conf calls 'linkup' when the
+# uplink reports LINK_UP (cable back, lagg failover) - a no-op while a session
+# is already connected.
 
+# shellcheck disable=SC2034  # rc.subr reads desc, rcvar and the *_cmd variables
 . /etc/rc.subr
 
-name=vpnswitch
-desc="VPN Switch Management Service"
-rcvar=vpnswitch_enable
+name=vpn_switch
+desc="VPN session via vpn-switch, before the time daemons"
+rcvar=vpn_switch_enable
 
-# Default configuration
 load_rc_config $name
 
-# Set defaults
-: ${vpnswitch_enable:="NO"}
-: ${vpnswitch_config_dir:="/data/vpn"}
-: ${vpnswitch_user:="root"}
-: ${vpnswitch_group:="wheel"}
-: ${vpnswitch_pidfile:="/var/run/vpnswitch.pid"}
-: ${vpnswitch_logfile:="/var/log/vpnswitch.log"}
+: "${vpn_switch_enable:="NO"}"
+: "${vpn_switch_user:="root"}"
+: "${vpn_switch_base:=""}"
+: "${vpn_switch_ifname:="lagg0"}"
+: "${vpn_switch_wait:="30"}"
+: "${vpn_switch_session:=""}"
+: "${vpn_switch_command:="/usr/local/bin/vpn-switch"}"
 
-# Commands and paths
-command="/usr/local/sbin/vpn-switch"
-pidfile="${vpnswitch_pidfile}"
-required_files="${vpnswitch_config_dir}/credentials.txt"
+extra_commands="status linkup"
+start_cmd="vpn_switch_start"
+stop_cmd="vpn_switch_stop"
+status_cmd="vpn_switch_status"
+linkup_cmd="vpn_switch_linkup"
 
-# Service functions
-vpnswitch_prestart() {
-    # Ensure log file exists and has proper permissions
-    if [ ! -f "${vpnswitch_logfile}" ]; then
-        touch "${vpnswitch_logfile}"
-        chown "${vpnswitch_user}:${vpnswitch_group}" "${vpnswitch_logfile}"
-        chmod 640 "${vpnswitch_logfile}"
-    fi
-
-    # Check if config directory exists
-    if [ ! -d "${vpnswitch_config_dir}" ]; then
-        err 1 "VPN config directory not found: ${vpnswitch_config_dir}"
-    fi
-
-    # Check if credentials file exists
-    if [ ! -f "${vpnswitch_config_dir}/credentials.txt" ]; then
-        err 1 "Credentials file not found: ${vpnswitch_config_dir}/credentials.txt"
-    fi
-
-    # Create PID directory if needed
-    piddir=$(dirname "${vpnswitch_pidfile}")
-    if [ ! -d "${piddir}" ]; then
-        mkdir -p "${piddir}"
-    fi
+# run_as_user CMD... - vpn-switch in the database owner's context
+run_as_user() {
+	local cmd="" a
+	if [ "$vpn_switch_user" = "root" ]; then
+		env VPN_SWITCH_BASE="$vpn_switch_base" "$@"
+		return
+	fi
+	for a in env VPN_SWITCH_BASE="$vpn_switch_base" "$@"; do
+		cmd="$cmd '$(printf '%s' "$a" | sed "s/'/'\\\\''/g")'"
+	done
+	su -m "$vpn_switch_user" -c "$cmd"
 }
 
-vpnswitch_start() {
-    # This is a management utility, not a traditional daemon
-    # We'll just check if the system is properly configured
-    echo "Starting ${desc}..."
-
-    # Verify installation
-    if ! "${command}" status >/dev/null 2>&1; then
-        echo "VPN Switch configuration verified"
-        return 0
-    else
-        echo "VPN Switch configuration check failed"
-        return 1
-    fi
+vpn_switch_precheck() {
+	if [ -z "$vpn_switch_base" ]; then
+		local home
+		home=$(pw usershow "$vpn_switch_user" 2>/dev/null | cut -d: -f9)
+		vpn_switch_base="${home:-/root}/.vpn-switch/db"
+	fi
+	if [ ! -d "$vpn_switch_base" ]; then
+		warn "$name: database $vpn_switch_base not found (vpn_switch_base in rc.conf)"
+		return 1
+	fi
+	[ -x "$vpn_switch_command" ] || { warn "$name: $vpn_switch_command not executable"; return 1; }
 }
 
-vpnswitch_stop() {
-    echo "Stopping ${desc}..."
-
-    # Stop any active VPN connections
-    "${command}" stop >/dev/null 2>&1
-
-    echo "All VPN connections stopped"
-    return 0
+# connected: a session is up (exit 0) - what makes start/linkup idempotent
+connected() {
+	run_as_user "$vpn_switch_command" status 2>/dev/null | grep -q 'Connected'
 }
 
-vpnswitch_status() {
-    "${command}" status
+# wait_for_uplink: link active and an IPv4 address on the uplink, or timeout
+wait_for_uplink() {
+	local i=0
+	while [ "$i" -lt "$vpn_switch_wait" ]; do
+		if ifconfig "$vpn_switch_ifname" 2>/dev/null | grep -q 'status: active' \
+		   && ifconfig "$vpn_switch_ifname" 2>/dev/null | grep -q 'inet '; then
+			return 0
+		fi
+		sleep 1; i=$((i + 1))
+	done
+	warn "$name: $vpn_switch_ifname has no link/address after ${vpn_switch_wait}s"
+	return 1
 }
 
-vpnswitch_restart() {
-    vpnswitch_stop
-    vpnswitch_start
+vpn_switch_start() {
+	vpn_switch_precheck || return 1
+	if connected; then
+		echo "$name: session already connected"
+		return 0
+	fi
+	wait_for_uplink || return 1
+	echo "Starting VPN session${vpn_switch_session:+ $vpn_switch_session} for $vpn_switch_user ($vpn_switch_base)."
+	# session start: with a name resumes that saved session, without it the
+	# 'default' one; the connect steps run under the database's interpreter
+	# pins (sudo sh), hence the passwordless-sudo requirement for the user.
+	if [ -n "$vpn_switch_session" ]; then
+		run_as_user "$vpn_switch_command" session start "$vpn_switch_session"
+	else
+		run_as_user "$vpn_switch_command" session start
+	fi
 }
 
-# Custom commands
-extra_commands="status"
-start_cmd="vpnswitch_start"
-stop_cmd="vpnswitch_stop"
-status_cmd="vpnswitch_status"
-restart_cmd="vpnswitch_restart"
-start_precmd="vpnswitch_prestart"
+# linkup: the devd hook - only when enabled, quiet when already connected
+vpn_switch_linkup() {
+	checkyesno vpn_switch_enable || return 0
+	connected && return 0
+	vpn_switch_start
+}
+
+vpn_switch_stop() {
+	vpn_switch_precheck || return 1
+	echo "Stopping VPN sessions for $vpn_switch_user."
+	run_as_user "$vpn_switch_command" stop
+}
+
+vpn_switch_status() {
+	vpn_switch_precheck || return 1
+	run_as_user "$vpn_switch_command" status
+}
 
 run_rc_command "$1"

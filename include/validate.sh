@@ -15,6 +15,7 @@
 # @summary Check for old log files beyond the retention period
 # @group   diagnostics
 # @returns validation report
+# @env     VPN_SWITCH_RETENTION_DAYS_LOG  retention window checked against
 # @example vpn-switch logs validate
 # @see     logs clean
 #@end
@@ -84,6 +85,7 @@ _logs_validate0() {
 # @summary Generate rm commands for old logs (review, then pipe to sh)
 # @group   diagnostics
 # @returns shell commands (review, then pipe to sh)
+# @env     VPN_SWITCH_RETENTION_DAYS_LOG  files older than this many days are removed
 # @example vpn-switch logs clean | sh
 # @see     logs validate
 #@end

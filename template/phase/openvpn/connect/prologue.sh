@@ -5,6 +5,12 @@
 # Usage:
 #   prologue.sh           - Generate full connect.sh header (default)
 #   prologue.sh inspect   - Generate only variable definitions for inspect mode
+#
+# Environment:
+#   VPN_SWITCH_PATH          PATH baked into the generated script
+#   VPN_SWITCH_PHASES_CONNECT  ordered phase list this prologue heads
+#   VPN_SWITCH_SCRIPT_SHELL  shebang/shell of the generated script
+#   (details: vpn-switch helpenv <VAR>)
 
 # Unpack context from environment
 eval "$VPN_SWITCH_CONTEXT_CONNECT"

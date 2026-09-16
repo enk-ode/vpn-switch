@@ -126,6 +126,17 @@ vpn-switch start privacy
 
 For the full picture, see [ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
+**One process when it counts.** `vpn-switch-binary.sh <db> <command...>`
+runs a command, or a whole batch (`batch <file>`), inside one process: the
+anchors are functions, the emitted lines are calls of the engine's `main`,
+the exit rules are the engine's. `vpn-switch-compile.sh` is the same file by
+its other name and writes the script instead of running it;
+`vpn-switch-walkthrough.sh` is the third name and shows the whole tree of a
+command as text, checks answered against the database as it is, every act
+under its anchor, nothing run. The engine itself lives in
+`include/engine.sh`; `vpn-switch.sh` is the wrapper that loads it and the
+modules.
+
 ---
 
 ## Phases & the patch step
@@ -172,6 +183,19 @@ vpn-switch/
 ```
 
 ---
+
+## Shell completion
+
+`gmake install` drops `completion/vpn-switch.bash` into
+`share/bash-completion/completions/`, so Tab completes command words,
+config and category names, sessions, environment variables, phases and
+profiles. The shell side is a few lines: it asks
+`vpn-switch complete <words...>`, which derives the candidates from the same
+`#@help` corpus that renders `help` and the man page (placeholders map to
+their value source through `@defcompletion` / `@completion`). Per user
+without root: copy the file to
+`~/.local/share/bash-completion/completions/vpn-switch`. Databases created
+before this feature need `vpn-switch env sync` once for the display pin.
 
 ## Requirements
 

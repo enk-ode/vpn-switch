@@ -92,6 +92,10 @@
 #   - Use stderr (>&2) for progress messages
 #   - Let the verify function handle error checking
 #
+#
+# Environment:
+#   VPN_SWITCH_PHASES_CONNECT  add your phase name here to activate it
+#   (details: vpn-switch helpenv VPN_SWITCH_PHASES_CONNECT)
 
 #-----------------------------------------------------------------------------
 # YOUR CUSTOM COMMANDS GO HERE

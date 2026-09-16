@@ -868,6 +868,7 @@ EOF
 
 #@help _wireguard_remove1
 # @command wireguard remove <name>
+# @completion name wireguard-config
 # @summary Remove a config, link or category (with safety checks)
 # @group   wireguard
 # @param   name  config, link or category to remove

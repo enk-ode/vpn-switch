@@ -419,6 +419,8 @@ _prologue_inspect0() {
 # @summary Full descriptive state dump (sessions, configs, phases, system)
 # @group   diagnostics
 # @returns diagnostic snapshot (always exits 0)
+# @env     VPN_SWITCH_DISPLAY_ANSI   0 disables colored output
+# @env     VPN_SWITCH_INTERPRETER_*  per-function pins shown in the snapshot
 # @example vpn-switch inspect
 # @see     validate
 #@end

@@ -1,0 +1,12 @@
+cat
+#
+# @summary Interpreter for the 'complete' family (bash-completion back-end)
+# @default cat
+# @values cat
+# @see VPN_SWITCH_INTERPRETER_help
+# @see VPN_SWITCH_TERMINAL_INTERPRETER
+#
+# 'vpn-switch complete <words>' prints completion candidates derived from the
+# help corpus; the shell reads them and never executes them. Pinned to cat
+# for the whole family (_complete0 .. _complete6, all terminals), immune to a
+# user flipping VPN_SWITCH_TERMINAL_INTERPRETER to sh.

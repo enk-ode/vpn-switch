@@ -43,6 +43,7 @@ resolve_session_id() {
 # @summary Lower-level disconnect of a session by PID (no name resolution)
 # @group   sessions
 # @param   PID  session PID to disconnect
+# @env     VPN_SWITCH_INTERFACE_<proto>  interface name pattern for teardown
 # @returns disconnect commands
 # @example vpn-switch session disconnect 12345
 # @see     session stop
@@ -1257,3 +1258,928 @@ _session_describe0() {
 # it's needed by batch combinators (___wireguard_stop0, ___openvpn_stop0)
 # which run before modules are loaded.
 
+
+# --- sessions, interfaces, start and stop (out of vpn-switch.sh, 15.09.2026) ---
+
+# random_select - Randomly select one item from list
+#
+# Input: items on stdin (one per line)
+# Output: one randomly selected item
+#
+random_select() {
+  local items=$(cat)
+  local count=$(echo "$items" | wc -l | tr -d ' ')
+
+  if [ "$count" -eq 0 ]; then
+    return 1
+  fi
+
+  # Use /dev/urandom for random selection. od's decimal output is padded, and
+  # the padding char differs by OS: OpenBSD zero-pads ("00826"), which $(())
+  # would read as invalid octal (8/9 are not octal digits) and abort. Normalise
+  # to a bare decimal via awk ($1+0) before the modulo so it is shell-agnostic.
+  local rand
+  rand=$(od -An -N2 -tu2 < /dev/urandom | awk '{print $1+0; exit}')
+  local selected=$(( rand % count + 1 ))
+  echo "$items" | sed -n "${selected}p"
+}
+
+# resolve_default_or_random - Resolve using default symlink or random selection
+#
+# Args: $1 - directory path
+#       $2 - pattern to select from (e.g., "*.conf" or "*")
+# Output: selected item name (basename)
+#
+resolve_default_or_random() {
+  local dir="$1"
+  local pattern="${2:-*}"
+
+  # Check for default symlink
+  if [ -L "$dir/default" ]; then
+    local target=$(readlink "$dir/default")
+    basename -- "$target"
+    return 0
+  fi
+
+  # Random selection - list items matching pattern, exclude directories and reserved keywords
+  local items=$(cd "$dir" && ls -1 $pattern 2>>"$LOG_FILE" | while read -r item; do
+    [ ! -d "$item" ] && [ "$item" != "default" ] && [ "$item" != "latest" ] && echo "$item"
+  done)
+
+  # Return empty if no items found (let caller decide if that's an error)
+  if [ -z "$items" ]; then
+    echo ""
+    return 0
+  fi
+
+  echo "$items" | random_select
+}
+
+#-----------------------------------------------------------------------------
+# Session Management
+#-----------------------------------------------------------------------------
+
+# check_and_create_session - Validate and prepare session directory creation
+#
+# Args: $1 - interface name (e.g., wg0, tun0)
+# Output: Commands to create session directory and handle conflicts
+#
+# IMPORTANT: This function is a BATCH COMBINATOR helper - it outputs commands
+# to stdout and should ONLY be called from batch combinator functions (___).
+# It must NOT be called from terminal functions or executed directly.
+#
+# The function outputs vpn-switch commands for:
+# - Session conflict detection and resolution
+# - Orphaned interface cleanup warnings
+# - Session directory creation with proper permissions
+#
+# Phase 2.1.1: Updated to include interface metadata and proper file permissions
+#
+check_and_create_session() {
+  local interface="$1"
+  local session_dir="$VPN_SWITCH_BASE/.session/$$"
+
+  # Check if session already exists (collision detection)
+  # This prevents multiple VPN starts in the same process from overwriting each other
+  if [ -d "$session_dir" ]; then
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"Session $$ already exists\" \"Cannot create multiple sessions in the same process\""
+    return 1
+  fi
+
+  # Validation - check for existing sessions on this interface
+  local session_base="$VPN_SWITCH_BASE/.session"
+  if [ -d "$session_base" ]; then
+    for session_dir_iter in "$session_base"/*/; do
+      [ ! -d "$session_dir_iter" ] && continue
+
+      # Read interface name from session
+      local session_interface_file="$session_dir_iter/interface"
+      local session_interface=""
+
+      if [ ! -f "$session_interface_file" ]; then
+        # Old session format without interface file - check protocol instead
+        local session_protocol="$(cat "$session_dir_iter/protocol" 2>>"$LOG_FILE" || echo "unknown")"
+
+        # Legacy: infer interface from protocol using dynamic variable lookup
+        local interface_var="VPN_SWITCH_INTERFACE_${session_protocol}"
+        eval "session_interface=\"\$$interface_var\""
+        [ -z "$session_interface" ] && continue
+      else
+        session_interface="$(cat "$session_interface_file")"
+      fi
+
+      # Check if interfaces match
+      if [ "$session_interface" = "$interface" ]; then
+        local session_pid=$(basename "$session_dir_iter")
+
+        # Skip current session (we may have just created it)
+        if [ "$session_pid" = "$$" ]; then
+          continue
+        fi
+
+        # Check if the session is actually alive (uses is_session_alive with ownership check)
+        # Note: is_session_alive is defined in include/session.sh and checks:
+        # 1. Ownership via session/latest-$interface symlink
+        # 2. Interface existence
+        # 3. Process existence (fallback)
+        # This prevents false positives from PID recycling
+        if is_session_alive "$session_dir_iter"; then
+          local original_config=$(cat "$session_dir_iter/original" 2>>"$LOG_FILE" || echo "unknown")
+          local config_name=$(basename "$original_config")
+          echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"VPN already running on interface $interface\" \"PID: $session_pid, config: $config_name\" \"Stop it first: vpn-switch stop\""
+          return 1
+        fi
+      fi
+    done
+  fi
+
+  # Check for running VPN processes (database-aware, protocol-agnostic)
+  # We warn about conflicts but allow creation because:
+  # 1. Session creation happens at generation time (may not execute)
+  # 2. Different databases should be isolated
+  # 3. Same-database conflicts are caught by check #2 (session tracking)
+  for protocol_dir in "$VPN_SWITCH_BASE"/*; do
+    [ ! -d "$protocol_dir" ] && continue
+    [ -L "$protocol_dir" ] && continue  # Skip symlinks
+
+    local protocol=$(basename "$protocol_dir")
+    is_pseudo_protocol "$protocol" && continue
+
+    # Get binary path from environment variable (VPN_SWITCH_BINARY_<protocol>)
+    local binary_var="VPN_SWITCH_BINARY_${protocol}"
+    eval "local binary_path=\"\$$binary_var\""
+    [ -z "$binary_path" ] && continue
+
+    # Extract just the binary name for pgrep matching
+    local binary_name=$(basename "$binary_path")
+
+    if pgrep -f "${binary_name}.*${interface}" >/dev/null 2>&1; then
+      local matching_pids=$(pgrep -f "${binary_name}.*${interface}")
+      for pid in $matching_pids; do
+        local cmdline=$(ps -p "$pid" -o args= 2>/dev/null || continue)
+
+        if echo "$cmdline" | grep -q "$VPN_SWITCH_BASE"; then
+          # Same database - orphaned process (check #2 should have caught tracked sessions)
+          echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" log \"Warning: Found orphaned $binary_name process for $interface (PID: $pid)\" \"Proceeding - interface cleanup will handle if needed\""
+        else
+          # Different database - warn about potential conflict
+          echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" log \"Warning: Interface $interface may be in use by another database (PID: $pid)\" \"Session created. Connect will fail if interface exists.\""
+        fi
+      done
+    fi
+  done
+
+  # Fallback: Check for orphaned interfaces (platform-agnostic)
+  if $EXAMINE_NETWORK_INTERFACES "$interface" >/dev/null 2>&1; then
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" log \"Warning: Found orphaned interface $interface (no active process). Auto-destroying...\""
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" interface destroy \"$interface\""
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" log \"Orphaned interface $interface destroyed\""
+  fi
+
+  # Output command to create minimal session directory (only PID file)
+  # Uses existing _session_create1 terminal function for actual execution
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" session create \"$$\""
+
+  return 0
+}
+
+# get_session_process_pid - Get the actual VPN process PID for a session
+#
+# Args: $1 - session directory path
+# Output: PID to stdout
+#
+# Returns the PID of the actual VPN process (wg-quick, openvpn, etc.)
+# Falls back to session directory name if VPN process PID not yet captured.
+#
+# This abstracts the difference between:
+#   - Session directory name (vpn-switch.sh PID - short-lived)
+#   - Actual VPN process PID (wg-quick/openvpn - long-lived)
+#
+get_session_process_pid() {
+  local session_dir="$1"
+
+  # Try to read VPN process PID from metadata
+  # This file is created during connection (protocol-agnostic: vpn.pid)
+  local vpn_pid=$(cat "$session_dir/vpn.pid" 2>>"$LOG_FILE")
+
+  if [ -n "$vpn_pid" ]; then
+    echo "$vpn_pid"
+  else
+    # Fall back to session directory name (pre-connection state)
+    basename "$session_dir"
+  fi
+}
+
+# session_peer_matches_interface - Verify a session's stored peer set matches
+# the peers actually loaded on the live interface.
+#
+# Args: $1 - Session directory path
+#       $2 - Interface name (e.g. "wg0")
+# Returns: 0 if the session's config matches the loaded interface OR the check
+#          cannot be performed safely; 1 only on positive evidence of mismatch.
+#
+# Rationale: is_session_alive() trusts the session/latest-$interface ownership
+# symlink to decide which session owns a live interface. If the interface is
+# later reconfigured with a different peer (or the symlink drifts), the symlink
+# can point at a session whose config is no longer loaded - so `session list`
+# would report a stale session as active. This cross-check catches that drift.
+#
+# Conservative by design: this helper may only DEMOTE active->stopped, and only
+# when it can positively read BOTH peer sets and they differ. Any uncertainty
+# (non-WireGuard protocol, unreadable dump - e.g. requires root or wg missing,
+# empty config) returns 0, so the existing no-root and OpenVPN behaviour is
+# never regressed.
+session_peer_matches_interface() {
+  local session_dir="$1"
+  local interface="$2"
+
+  # Only WireGuard exposes a peer identity on the interface; skip others.
+  local protocol=""
+  if [ -f "$session_dir/protocol" ]; then
+    protocol=$(cat "$session_dir/protocol" 2>>"$LOG_FILE")
+  fi
+  [ "$protocol" = "wireguard" ] || return 0
+
+  # Peers loaded on the live interface (read-only; works without root on
+  # supported platforms). Empty/unreadable -> no judgement.
+  local loaded=""
+  loaded=$($EXAMINE_VPN_WIREGUARD_INTERFACE "$interface" 2>>"$LOG_FILE" \
+    | grep '^peer:' \
+    | sed 's/^peer:[[:space:]]*//' \
+    | sort)
+  [ -n "$loaded" ] || return 0
+
+  # Peers declared by this session's stored config. Empty/unreadable -> no
+  # judgement.
+  local conf="$session_dir/$interface.conf"
+  [ -f "$conf" ] || return 0
+  local stored=""
+  stored=$(grep -i '^[[:space:]]*PublicKey' "$conf" 2>>"$LOG_FILE" \
+    | sed 's/^[[:space:]]*[Pp]ublic[Kk]ey[[:space:]]*=[[:space:]]*//' \
+    | sort)
+  [ -n "$stored" ] || return 0
+
+  # Positive comparison: match -> 0, mismatch -> 1 (drift detected).
+  [ "$loaded" = "$stored" ]
+}
+
+# is_session_alive - Check if a session's VPN process is running
+#
+# Args: $1 - Session directory path
+# Returns: 0 if process is alive, 1 if dead
+#
+# Checks session liveness using multiple strategies:
+# 1. Ownership check via session/latest-$interface symlink
+# 2. Interface existence check
+# 3. Peer cross-check (WireGuard): config loaded on the interface must match
+# 4. Process existence check (may require sudo for cross-user)
+#
+# This function must be in vpn-switch.sh (not just session.sh) because
+# it's called by batch combinators (___wireguard_stop0, etc.) which run
+# before modules are loaded.
+#
+is_session_alive() {
+  local session_dir="$1"
+
+  # Sessions without vpn.pid are treated as stopped/stale
+  # This includes:
+  # - Legacy sessions (created before vpn.pid migration)
+  # - Pending sessions (created but never connected)
+  # - Broken sessions (vpn.pid deleted/lost)
+  if [ ! -f "$session_dir/vpn.pid" ]; then
+    return 1  # Mark as stopped
+  fi
+
+  # Read interface name
+  local interface=""
+  if [ -f "$session_dir/interface" ]; then
+    interface=$(cat "$session_dir/interface" 2>>"$LOG_FILE")
+  fi
+
+  # Primary check: Ownership + interface existence (works without root privileges)
+  # Uses latest-$interface symlink to determine which session owns the interface
+  # This prevents multiple sessions from claiming the same interface
+  if [ -n "$interface" ]; then
+    local session_proto_dir="$VPN_SWITCH_BASE/session"
+    local ownership_link="$session_proto_dir/latest-$interface"
+
+    # Check if ownership symlink exists and points to this session
+    if [ -L "$ownership_link" ]; then
+      local owner_session=$(readlink "$ownership_link" 2>>"$LOG_FILE" || echo "")
+      local owner_pid=$(basename "$owner_session" 2>>"$LOG_FILE" || echo "")
+      local this_pid=$(basename "$session_dir")
+
+      # This session owns the interface - check if interface actually exists
+      if [ "$owner_pid" = "$this_pid" ]; then
+        if $EXAMINE_NETWORK_INTERFACE_EXISTS "$interface" >/dev/null 2>&1; then
+          # Interface exists and we own it per the ownership symlink. Cross-check
+          # that the peer actually loaded on the interface matches this session's
+          # config; a mismatch means the interface was reconfigured by another
+          # session and this one is effectively stopped (see
+          # session_peer_matches_interface).
+          if session_peer_matches_interface "$session_dir" "$interface"; then
+            return 0  # We own the interface, it exists, and our config is loaded
+          fi
+          return 1    # We own the symlink but a different config is loaded → stopped
+        else
+          return 1  # We own it but interface is down
+        fi
+      else
+        # Ownership symlink exists but points to different session
+        # This session does NOT own the interface → stopped
+        return 1
+      fi
+    fi
+
+    # No ownership symlink exists
+    # For old sessions (pre-ownership-tracking): check if interface exists
+    # If interface doesn't exist, we need process check to distinguish:
+    # - PID recycling (process dead) → stopped
+    # - Test session or pending (process alive) → active
+    if ! $EXAMINE_NETWORK_INTERFACE_EXISTS "$interface" >/dev/null 2>&1; then
+      # Interface doesn't exist - use process check as final arbiter
+      local pid=$(cat "$session_dir/vpn.pid" 2>>"$LOG_FILE")
+      if $EXAMINE_PROCESS_EXISTS "$pid" 2>>"$LOG_FILE"; then
+        return 0  # Process alive despite no interface (test/pending session)
+      else
+        return 1  # No interface + dead process → PID recycling, definitely stopped
+      fi
+    fi
+  fi
+
+  # Fallback check: Process exists (only reached for old sessions with existing interface)
+  # Platform variable EXAMINE_PROCESS_EXISTS can be configured with sudo prefix
+  # This is a last resort for sessions created before ownership tracking
+  local pid=$(cat "$session_dir/vpn.pid" 2>>"$LOG_FILE")
+  if $EXAMINE_PROCESS_EXISTS "$pid" 2>>"$LOG_FILE"; then
+    return 0  # Process running (old session, interface exists, process alive)
+  fi
+
+  # All checks failed
+  return 1  # Session is stopped
+}
+
+# find_session_by_interface - Find session directory by interface name
+#
+# Args: $1 - interface name (e.g., "wg0")
+# Output: Session PID if found, empty string otherwise
+# Returns: 0 if found, 1 if not found
+#
+find_session_by_interface() {
+  local target_interface="$1"
+  local session_base="$VPN_SWITCH_BASE/.session"
+
+  [ ! -d "$session_base" ] && return 1
+
+  for session_dir in "$session_base"/*/; do
+    [ ! -d "$session_dir" ] && continue
+
+    local session_interface="$(cat "$session_dir/interface" 2>>"$LOG_FILE")"
+
+    # Legacy sessions: infer interface from protocol
+    if [ -z "$session_interface" ]; then
+      local session_protocol="$(cat "$session_dir/protocol" 2>>"$LOG_FILE")"
+      case "$session_protocol" in
+        wireguard) session_interface="$VPN_SWITCH_INTERFACE_wireguard" ;;
+        openvpn) session_interface="$VPN_SWITCH_INTERFACE_openvpn" ;;
+        *) continue ;;
+      esac
+    fi
+
+    if [ "$session_interface" = "$target_interface" ]; then
+      basename "$session_dir"
+      return 0
+    fi
+  done
+
+  return 1
+}
+
+# _session_create1 - Create session directory with minimal structure
+#
+# Args: $1 - session PID
+# Output: Shell commands to create session directory
+#
+# Terminal function - outputs shell commands for execution
+#
+#@help _session_create1
+# @internal create a session metadata directory (start chain step)
+#@end
+_session_create1() {
+  local session_pid="$1"
+  local session_dir="$VPN_SWITCH_BASE/.session/$session_pid"
+
+  cat <<EOF
+$MODIFY_DIR_CREATE "$session_dir"
+$MODIFY_FILE_PERMS 0750 "$session_dir"
+echo "$session_pid" > "$session_dir/pid"
+$MODIFY_FILE_PERMS 0640 "$session_dir/pid"
+EOF
+}
+
+# __session_exists1 - Check for session directory collision
+#
+# Args: $1 - session PID
+# Output: error command if collision exists, log command otherwise
+#
+# Combinator - outputs exactly 1 vpn-switch command
+#
+#@help __session_exists1
+# @internal guard: refuse a duplicate session for the current process
+#@end
+__session_exists1() {
+  local session_pid="$1"
+  local session_dir="$VPN_SWITCH_BASE/.session/$session_pid"
+
+  if [ -d "$session_dir" ]; then
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"Session $session_pid already exists\" \"Cannot create multiple sessions in the same process\""
+  else
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" log \"Session directory available for $session_pid\""
+  fi
+}
+
+# __session_conflicts2 - Check for interface conflict with existing sessions
+#
+# Args: $1 - session PID
+#       $2 - interface name
+# Output: error command if conflict exists, log command otherwise
+#
+# Combinator - outputs exactly 1 vpn-switch command
+#
+#@help __session_conflicts2
+# @internal guard: detect interface conflicts before connect
+#@end
+__session_conflicts2() {
+  local session_pid="$1"
+  local interface="$2"
+  local session_base="$VPN_SWITCH_BASE/.session"
+
+  # No sessions directory - no conflicts
+  if [ ! -d "$session_base" ]; then
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" log \"No sessions directory - no interface conflicts\""
+    return
+  fi
+
+  for session_dir in "$session_base"/*/; do
+    [ ! -d "$session_dir" ] && continue
+
+    # Interface file is required - skip sessions without it
+    [ ! -f "$session_dir/interface" ] && continue
+
+    local session_interface
+    session_interface=$(cat "$session_dir/interface")
+
+    # Different interface - no conflict
+    [ "$session_interface" != "$interface" ] && continue
+
+    # Same interface - check if it's another session
+    local other_pid
+    other_pid=$(basename "$session_dir")
+
+    # Skip self
+    [ "$other_pid" = "$session_pid" ] && continue
+
+    # Check if VPN process is running
+    [ ! -f "$session_dir/vpn.pid" ] && continue
+
+    local vpn_pid
+    vpn_pid=$(cat "$session_dir/vpn.pid")
+
+    # Use platform variable for process check
+    if $EXAMINE_PROCESS_EXISTS "$vpn_pid" 2>/dev/null; then
+      local original_config
+      original_config=$(cat "$session_dir/original" 2>/dev/null || echo "unknown")
+      local config_name
+      config_name=$(basename "$original_config")
+
+      echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"VPN already running on interface $interface\" \"PID: $other_pid, config: $config_name\" \"Stop it first: vpn-switch stop\""
+      return
+    fi
+  done
+
+  # No conflicts found
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" log \"No interface conflicts found for $interface\""
+}
+
+# __interface_check1 - Check if network interface exists (orphan check)
+#
+# Args: $1 - interface name
+# Output: error command if interface exists, log command otherwise
+#
+# Terminal function - outputs shell commands to destroy an interface
+#
+#@help _interface_destroy1
+# @internal destroy an orphaned interface (cleanup chain step)
+#@end
+_interface_destroy1() {
+  local interface="$1"
+  # Use printf format template for platform independence (FreeBSD vs Linux)
+  printf '%s 2>>"$LOG_FILE" || true\n' "$(printf "$MODIFY_INTERFACE_DESTROY_FMT" "$interface")"
+}
+
+# Combinator - outputs exactly 1 vpn-switch command
+#
+#@help __interface_check1
+# @internal guard: check interface availability before connect
+#@end
+__interface_check1() {
+  local interface="$1"
+
+  if $EXAMINE_NETWORK_INTERFACES "$interface" >/dev/null 2>&1; then
+    local destroy_cmd=$(printf "$MODIFY_INTERFACE_DESTROY_FMT" "$interface")
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"Orphaned interface $interface exists\" \"Please destroy it manually: $destroy_cmd\""
+  else
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" log \"Interface $interface is available\""
+  fi
+}
+
+# ___session_prepare3 - Prepare session with validation
+#
+# Args: $1 - session PID
+#       $2 - protocol name
+#       $3 - interface name
+# Output: vpn-switch commands for session create and populate
+#
+# Batch combinator - performs validation at generation time, outputs commands
+# Protocol-agnostic: caller provides interface directly
+#
+#@help ___session_prepare3
+# @internal prepare a session (exists/conflicts/check/create/populate chain)
+#@end
+___session_prepare3() {
+  local session_pid="$1"
+  local protocol="$2"
+  local interface="$3"
+
+  # All checks passed - output commands
+  cat <<EOF
+"\$VPN_SWITCH_CONTEXT_SCRIPT" session exists "$session_pid"
+"\$VPN_SWITCH_CONTEXT_SCRIPT" session conflicts "$session_pid" "$interface"
+"\$VPN_SWITCH_CONTEXT_SCRIPT" interface check "$interface"
+"\$VPN_SWITCH_CONTEXT_SCRIPT" session create "$session_pid"
+"\$VPN_SWITCH_CONTEXT_SCRIPT" session populate "$session_pid" "$protocol" "$interface"
+EOF
+}
+
+# _session_populate3 - Populate session directory with metadata
+#
+# Args: $1 - session PID
+#       $2 - protocol (wireguard or openvpn)
+#       $3 - interface name
+# Output: Shell commands to populate session metadata
+#
+# Terminal function - outputs shell commands for execution
+# Protocol-agnostic: caller provides interface directly
+#
+# NOTE: Stale session cleanup is performed by 'session clean' command
+# which should be run periodically to clean up dead sessions and orphaned interfaces.
+#
+#@help _session_populate3
+# @internal write session metadata (protocol, interface, original)
+#@end
+_session_populate3() {
+  local pid="$1"
+  local protocol="$2"
+  local interface="$3"
+  local session_dir="$VPN_SWITCH_BASE/.session/$pid"
+
+  cat <<EOF
+echo "$protocol" > "$session_dir/protocol"
+echo "$interface" > "$session_dir/interface"
+$EXAMINE_DATE_NOW > "$session_dir/started"
+$MODIFY_FILE_PERMS 0640 "$session_dir/protocol" "$session_dir/interface" "$session_dir/started"
+EOF
+}
+
+#-----------------------------------------------------------------------------
+# Configuration File Patching
+#-----------------------------------------------------------------------------
+
+# is_pseudo_protocol - Check if directory name is a pseudo-protocol
+#
+# Args: $1 - protocol/directory name
+# Returns: 0 if pseudo-protocol (should skip), 1 if real protocol
+#
+# Pseudo-protocols are special directories that are NOT VPN protocols.
+# Detection rules:
+#   1. Hidden directories (.*) are always pseudo-protocols
+#   2. Directories in VPN_SWITCH_PSEUDO_PROTOCOL variable (space-separated list)
+#
+# Default VPN_SWITCH_PSEUDO_PROTOCOL: "session environment"
+# Override in tests to simulate "no protocols found" scenarios
+#
+is_pseudo_protocol() {
+  local proto="$1"
+
+  # Hidden directories are always pseudo-protocols
+  case "$proto" in
+    .*) return 0 ;;
+  esac
+
+  # Check against configured pseudo-protocol list
+  local pseudo
+  for pseudo in $VPN_SWITCH_PSEUDO_PROTOCOL; do
+    [ "$proto" = "$pseudo" ] && return 0
+  done
+
+  return 1
+}
+
+#-----------------------------------------------------------------------------
+# Stop/Disconnect Commands (Combinator Pattern)
+#-----------------------------------------------------------------------------
+
+# __stop0 - Stop all VPN sessions (filesystem discovery)
+#
+# Output: Combinator commands (one per protocol)
+#
+# Uses filesystem discovery: VPN_SWITCH_BASE subdirectories = protocols.
+# Special handling: "session" pseudo-protocol runs first (stale cleanup).
+#
+#@help ___stop0
+# @command stop
+# @summary Stop every active VPN session (idempotent)
+# @group   connection
+# @returns disconnect commands for all active sessions
+# @example vpn-switch stop
+# @see     start
+#@end
+___stop0() {
+  # First: Stop all protocol interfaces (VPN teardown)
+  local base_dir="$VPN_SWITCH_BASE"
+  [ ! -d "$base_dir" ] && return 0
+
+  for protocol_dir in "$base_dir"/*/; do
+    [ ! -d "$protocol_dir" ] && continue
+
+    local protocol=$(basename "$protocol_dir")
+
+    # Skip pseudo-protocols (consistent with other batch combinators)
+    is_pseudo_protocol "$protocol" && continue
+
+    # Check if protocol has a stop function (prevent usage() spam)
+    # Look for __<protocol>_stop0 or __<protocol>_stop1 in ANCHOR_FUNCTIONS list
+    # (Functions may be in modules, not in main script, so check the complete list)
+    if ! echo "$ANCHOR_FUNCTIONS" | grep -q "__${protocol}_stop"; then
+      echo "# Skipping protocol '$protocol' (no stop function implemented)"
+      continue
+    fi
+
+    # Output stop command for each discovered protocol
+    # Script path uses literal variable reference for portability
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" $protocol stop"
+  done
+
+  # Note: Session cleanup is now explicit - users should run 'vpn-switch session clean'
+  # to remove unreferenced sessions after stopping VPNs
+}
+
+# __stop1 - Stop specific VPN session by interface name
+#
+# Args: $1 - interface name (e.g., "wg0", "tun0")
+# Output: Combinator command for protocol-specific stop
+#
+# Resolves interface → protocol, outputs "<protocol> stop <interface>"
+#
+#@help __stop1
+# @internal arity-1 sibling of 'stop' (stop a specific interface)
+#@end
+__stop1() {
+  local interface="$1"
+
+  # Find session for this interface
+  local session_pid=$(find_session_by_interface "$interface")
+
+  if [ -z "$session_pid" ]; then
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"No active VPN session found for interface: $interface\""
+    return
+  fi
+
+  local session_dir="$VPN_SWITCH_BASE/.session/$session_pid"
+  local session_protocol=$(cat "$session_dir/protocol" 2>>"$LOG_FILE")
+
+  if [ -z "$session_protocol" ]; then
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"Could not determine protocol for interface: $interface\""
+    return
+  fi
+
+  # Output protocol-specific stop command
+  # Script path uses literal variable reference for portability
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" $session_protocol stop $interface"
+}
+
+#-----------------------------------------------------------------------------
+# Database Initialization (Phase 2.3.1)
+#-----------------------------------------------------------------------------
+
+#-----------------------------------------------------------------------------
+# Phase Template Lifting Engine
+#-----------------------------------------------------------------------------
+
+# __start1 - Protocol-agnostic start with auto-detection (Phase 3.4.1)
+#
+# Args: $1 - config name (can be in any protocol directory)
+# Output: Resolved protocol start command (single vpn-switch command)
+#
+# Resolution strategy (three-tier):
+# 1. Extension link fast path: If name has extension and extension link exists,
+#    resolve protocol via link (O(1) - fast)
+# 2. Filesystem search: Scan all protocol directories for matching config
+#    (O(n) protocols - slower but flexible)
+# 3. Error handling: Clear messages for not found or ambiguous matches
+#
+# Benefits:
+# - No hardcoded protocol names
+# - User can add new protocols (e.g., ikev2/) without modifying this function
+# - Extension links provide fast path for common case
+# - Fallback search handles configs without extensions
+#
+#@help __start1
+# @command start [<config>]
+# @completion config any-config
+# @summary Connect using a config; with no argument, resume the default session or pick at random
+# @group   connection
+# @param   config  config/category/group/alias to start; omit to use the 'default' session, otherwise a random protocol and config
+# @returns connect commands (delegates to the resolved protocol)
+# @example vpn-switch start privacy
+# @example vpn-switch start
+# @see     stop
+# @see     session save
+# @see     wireguard start
+#@end
+__start1() {
+  local name="$1"
+
+  if [ -z "$name" ]; then
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"start: config name required\""
+    return
+  fi
+
+  # Extract extension if present
+  local ext=""
+  case "$name" in
+    *.*) ext="${name##*.}" ;;
+  esac
+
+  # Fast path: Extension link exists
+  if [ -n "$ext" ] && [ -L "$VPN_SWITCH_BASE/$ext" ]; then
+    local link_target
+    link_target=$(readlink "$VPN_SWITCH_BASE/$ext" 2>>"$LOG_FILE")
+    if [ $? -ne 0 ]; then
+      echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"start: failed to resolve extension link: $ext\""
+      return
+    fi
+
+    local protocol
+    protocol=$(basename "$link_target")
+
+    # Validate protocol directory exists
+    if [ ! -d "$VPN_SWITCH_BASE/$protocol" ]; then
+      echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"start: extension link '$ext' points to non-existent protocol '$protocol'\""
+      return
+    fi
+
+    # Delegate to protocol-specific start
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" $protocol start $name"
+    return
+  fi
+
+  # Fallback: Search all protocol directories
+  local matches=""
+  local proto
+  for protocol_dir in "$VPN_SWITCH_BASE"/*; do
+    # Skip symlinks (extension links like conf→wireguard/)
+    [ -L "$protocol_dir" ] && continue
+    [ -d "$protocol_dir" ] || continue
+    proto=$(basename "$protocol_dir")
+
+    # Skip pseudo-protocols
+    is_pseudo_protocol "$proto" && continue
+
+    # Look for config (exact match, with extension, or as category)
+    for candidate in "$protocol_dir/$name" "$protocol_dir/$name".*; do
+      # Check if file, symlink, or directory (category)
+      if [ -f "$candidate" ] || [ -L "$candidate" ] || [ -d "$candidate" ]; then
+        config_basename=$(basename "$candidate")
+
+        # Add to matches
+        if [ -z "$matches" ]; then
+          matches="$proto:$config_basename"
+        else
+          matches="$matches $proto:$config_basename"
+        fi
+        break  # Only count first match per protocol
+      fi
+    done
+  done
+
+  # Handle results
+  case "$matches" in
+    "")
+      # No matches found - build list of protocols searched
+      local proto_list=""
+      for protocol_dir in "$VPN_SWITCH_BASE"/*; do
+        [ -L "$protocol_dir" ] && continue
+        [ -d "$protocol_dir" ] || continue
+        proto=$(basename "$protocol_dir")
+        is_pseudo_protocol "$proto" && continue
+        if [ -z "$proto_list" ]; then
+          proto_list="$proto/$name"
+        else
+          proto_list="$proto_list, $proto/$name"
+        fi
+      done
+      echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"start: config not found: $name\" \"Searched in: $proto_list\""
+      return
+      ;;
+    *" "*)
+      # Multiple matches - build list and suggest first match
+      local match_list=""
+      for match in $matches; do
+        if [ -z "$match_list" ]; then
+          match_list="${match%%:*}/${match#*:}"
+        else
+          match_list="$match_list, ${match%%:*}/${match#*:}"
+        fi
+      done
+      # Get first match for suggestion
+      local first_match="${matches%% *}"
+      local first_proto="${first_match%%:*}"
+      local first_config="${first_match#*:}"
+      echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"Multiple configs match: $name\" \"Found: $match_list\" \"Use: vpn-switch $first_proto start $first_config\""
+      return
+      ;;
+    *)
+      # Single match - use it
+      proto="${matches%%:*}"
+      config="${matches#*:}"
+      echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" $proto start $config"
+      ;;
+  esac
+}
+
+# __start0 - Protocol-agnostic start using default or random (Phase 3.4.1)
+#
+# No args - tries default session, then random protocol selection
+# Output: Resolved protocol start command or session start command
+#
+# Resolution strategy:
+# 1. Try session/default link (if exists, resume that session)
+# 2. Otherwise: discover protocols and pick random config from random protocol
+# 3. Skip pseudo-protocols during discovery
+#
+# Benefits:
+# - No hardcoded protocol names
+# - User can add new protocols and they'll be included in random selection
+# - Seamless integration with session management (default session takes priority)
+#
+#@help __start0
+# @internal arity-0 sibling of 'start' (use the default config)
+#@end
+__start0() {
+  # Try default session first
+  if [ -L "$VPN_SWITCH_BASE/session/default" ]; then
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" session start"
+    return
+  fi
+
+  # No default session - discover protocols and pick randomly
+  local protocols=""
+  local proto
+  for dir in "$VPN_SWITCH_BASE"/*; do
+    # Skip symlinks (extension links like conf→wireguard/)
+    [ -L "$dir" ] && continue
+    [ -d "$dir" ] || continue
+    proto=$(basename "$dir")
+
+    # Skip pseudo-protocols
+    is_pseudo_protocol "$proto" && continue
+
+    # Check if protocol has any configs
+    if ls "$dir"/*.* >/dev/null 2>&1 || \
+       ls "$dir"/*/ >/dev/null 2>&1; then
+      protocols="$protocols $proto"
+    fi
+  done
+
+  # No protocols found
+  if [ -z "$protocols" ]; then
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"start: no VPN protocols found\" \"Run 'vpn-switch import' to add configs\""
+    return 0
+  fi
+
+  # Pick random protocol
+  local proto_count
+  proto_count=$(printf "%s" "$protocols" | wc -w | tr -d ' ')
+  local proto_index
+  proto_index=$(($(date +%s) % proto_count + 1))
+  local selected_proto
+  selected_proto=$(printf "%s" "$protocols" | awk "{print \$$proto_index}")
+
+  # Delegate to protocol-specific start with no args (picks random config)
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" $selected_proto start"
+}
+
+#-----------------------------------------------------------------------------
+# Error Commands - Terminal Functions
+#-----------------------------------------------------------------------------

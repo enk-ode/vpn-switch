@@ -51,6 +51,9 @@ DOCDIR      := $(PREFIX)/share/doc/vpn-switch
 # Man page directory (future)
 MANDIR      := $(PREFIX)/share/man/man1
 
+# bash-completion looks here for <command> files (lazy-loaded on first Tab)
+COMPLETIONDIR := $(PREFIX)/share/bash-completion/completions
+
 # rc.d directory (FreeBSD service script; used by freebsd.mk plugin)
 RCDIR       := $(PREFIX)/etc/rc.d
 
@@ -218,7 +221,9 @@ install-base:
 	@if [ -f docs/vpn-switch.1 ]; then \
 	    $(INSTALL) -m 644 docs/vpn-switch.1 $(DESTDIR)$(MANDIR)/vpn-switch.1; \
 	fi
-	@echo "  → installed script, helpers, libs, templates, docs, man page"
+	@$(INSTALL) -d -m 755 $(DESTDIR)$(COMPLETIONDIR)
+	@$(INSTALL) -m 644 completion/vpn-switch.bash $(DESTDIR)$(COMPLETIONDIR)/vpn-switch
+	@echo "  → installed script, helpers, libs, templates, docs, man page, bash completion"
 	@echo "  → platform symlink: $(PLATFORM).sh"
 
 uninstall: uninstall-platform uninstall-base
@@ -230,6 +235,7 @@ uninstall-base:
 	    rm -f $(DESTDIR)$(SBINDIR)/`basename $$script`; \
 	done
 	@rm -rf $(DESTDIR)$(LIBDIR)
+	@rm -f $(DESTDIR)$(COMPLETIONDIR)/vpn-switch
 	@rm -rf $(DESTDIR)$(DOCDIR)
 	@rm -f $(DESTDIR)$(MANDIR)/vpn-switch.1
 	@echo "  → removed script, helpers, libs, templates, docs, man page"

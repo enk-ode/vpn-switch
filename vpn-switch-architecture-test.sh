@@ -1,17 +1,17 @@
 #!/bin/sh
 #
 # === AUTO-GENERATED METADATA (make metadata) ===
-# Generated: 2026-07-31 10:21:28
+# Generated: 2026-09-15 20:13:08
 # Terminal functions (single underscore): output shell commands
 # Combinator functions (double underscore): output single vpn-switch command
 # Batch-combinator functions (triple underscore): output multiple vpn-switch commands
-TERMINAL_FUNCTIONS="_session_create1 _interface_destroy1 _session_populate3 _phases_copy0 _env_sync0 _version_sync0 _version0 _link2 _remove1 _error1 _error2 _error3 _fail2 _log1 _log2 _log3  _lift1 _database_init0 _environment_init1 _environment_cache1 _lift3 _setenv2 _getenv1 _unsetenv1 _cat1 _batch2 _printenv0 _status0 _help0 _help1 _help2 _helpenv0 _helpenv2 _database_enumerate0 _system_inspect0 _logs_inspect0 _phases_inspect0 _summary_inspect0 _prologue_inspect0 _openvpn_patch2 _openvpn_configure1 _openvpn_connect1 _openvpn_disconnect1 _openvpn_patch1 _openvpn_enumerate0 _openvpn_import1 _openvpn_list0 _openvpn_list1 _openvpn_add1 _openvpn_add3 _openvpn_link2 _openvpn_remove1 _openvpn_remove2 _openvpn_validate0 _openvpn_info1 _session_list0 _session_show1 _session_remove1 _session_connect1 _session_save0 _session_save1 _session_clean0 _session_refresh0 _session_validate0 _session_enumerate0 _session_describe0 _logs_validate0 _logs_clean0 _phases_validate0 _database_validate0 _binaries_validate0 _network_validate0 _permissions_validate0 _environment_validate0 _install_validate0 _version_validate0 _sudo_validate0 _wireguard_patch2 _wireguard_configure1 _wireguard_connect1 _wireguard_disconnect1 _wireguard_enumerate0 _wireguard_import1 _wireguard_list0 _wireguard_list1 _wireguard_add1 _wireguard_add3 _wireguard_link2 _wireguard_remove1 _wireguard_remove2 _wireguard_validate0 _wireguard_patch1 _wireguard_info1"
-COMBINATOR_FUNCTIONS="__session_exists1 __session_conflicts2 __interface_check1 __stop1 __import1 __start1 __start0  __bootstrap1 __environment_cache0 __phases_lift1 __init0 __batch1 __restore1 __helpenv1 __setintp2 __getintp1 __helpintp1 __helpintp2 __openvpn_start0 __openvpn_start1 __openvpn_stop1 __openvpn_add2 __openvpn_help0 __session_disconnect1 __session_stop1 __session_show0 __session_start0 __session_start1 __session_help0 __wireguard_start0 __wireguard_start1 __wireguard_stop1 __wireguard_add2 __wireguard_help0"
-BATCH_COMBINATOR_FUNCTIONS="___session_prepare3 ___stop0 ___phases_sync1 ___phases_sync0 ___sync0 ___list0  ___bootstrap2 ___init1 ___dumpenv1 ___dump0 ___batch0 ___environment_inspect0 ___inspect0 ___openvpn_create1 ___openvpn_stop0 ___openvpn_inspect0 ___openvpn_clean0 ___openvpn_dump0 ___session_stop0 ___session_switch1 ___session_switch2 ___session_dump0 ___session_inspect0 ___validate0 ___wireguard_create1 ___wireguard_inspect0 ___wireguard_stop0 ___wireguard_clean0 ___wireguard_clean1 ___wireguard_dump0"
-ANCHOR_FUNCTIONS="_session_create1 _interface_destroy1 _session_populate3 _phases_copy0 _env_sync0 _version_sync0 _version0 _link2 _remove1 _error1 _error2 _error3 _fail2 _log1 _log2 _log3  _lift1 _database_init0 _environment_init1 _environment_cache1 _lift3 _setenv2 _getenv1 _unsetenv1 _cat1 _batch2 _printenv0 _status0 _help0 _help1 _help2 _helpenv0 _helpenv2 _database_enumerate0 _system_inspect0 _logs_inspect0 _phases_inspect0 _summary_inspect0 _prologue_inspect0 _openvpn_patch2 _openvpn_configure1 _openvpn_connect1 _openvpn_disconnect1 _openvpn_patch1 _openvpn_enumerate0 _openvpn_import1 _openvpn_list0 _openvpn_list1 _openvpn_add1 _openvpn_add3 _openvpn_link2 _openvpn_remove1 _openvpn_remove2 _openvpn_validate0 _openvpn_info1 _session_list0 _session_show1 _session_remove1 _session_connect1 _session_save0 _session_save1 _session_clean0 _session_refresh0 _session_validate0 _session_enumerate0 _session_describe0 _logs_validate0 _logs_clean0 _phases_validate0 _database_validate0 _binaries_validate0 _network_validate0 _permissions_validate0 _environment_validate0 _install_validate0 _version_validate0 _sudo_validate0 _wireguard_patch2 _wireguard_configure1 _wireguard_connect1 _wireguard_disconnect1 _wireguard_enumerate0 _wireguard_import1 _wireguard_list0 _wireguard_list1 _wireguard_add1 _wireguard_add3 _wireguard_link2 _wireguard_remove1 _wireguard_remove2 _wireguard_validate0 _wireguard_patch1 _wireguard_info1 __session_exists1 __session_conflicts2 __interface_check1 __stop1 __import1 __start1 __start0  __bootstrap1 __environment_cache0 __phases_lift1 __init0 __batch1 __restore1 __helpenv1 __setintp2 __getintp1 __helpintp1 __helpintp2 __openvpn_start0 __openvpn_start1 __openvpn_stop1 __openvpn_add2 __openvpn_help0 __session_disconnect1 __session_stop1 __session_show0 __session_start0 __session_start1 __session_help0 __wireguard_start0 __wireguard_start1 __wireguard_stop1 __wireguard_add2 __wireguard_help0 ___session_prepare3 ___stop0 ___phases_sync1 ___phases_sync0 ___sync0 ___list0  ___bootstrap2 ___init1 ___dumpenv1 ___dump0 ___batch0 ___environment_inspect0 ___inspect0 ___openvpn_create1 ___openvpn_stop0 ___openvpn_inspect0 ___openvpn_clean0 ___openvpn_dump0 ___session_stop0 ___session_switch1 ___session_switch2 ___session_dump0 ___session_inspect0 ___validate0 ___wireguard_create1 ___wireguard_inspect0 ___wireguard_stop0 ___wireguard_clean0 ___wireguard_clean1 ___wireguard_dump0"
+TERMINAL_FUNCTIONS="_error1 _error2 _error3 _fail2 _log1 _log2 _log3  _lift1 _database_init0 _environment_init1 _environment_cache1 _lift3 _setenv2 _getenv1 _unsetenv1 _cat1 _batch2 _printenv0 _env_sync0 _version_sync0 _version0 _link2 _remove1 _status0 _help0 _help1 _help2 _complete0 _complete1 _complete2 _complete3 _complete4 _complete5 _complete6 _helpenv0 _helpenv2 _database_enumerate0 _system_inspect0 _logs_inspect0 _phases_inspect0 _summary_inspect0 _prologue_inspect0 _openvpn_patch2 _openvpn_configure1 _openvpn_connect1 _openvpn_disconnect1 _openvpn_patch1 _openvpn_enumerate0 _openvpn_import1 _openvpn_list0 _openvpn_list1 _openvpn_add1 _openvpn_add3 _openvpn_link2 _openvpn_remove1 _openvpn_remove2 _openvpn_validate0 _openvpn_info1 _phases_copy0 _session_list0 _session_show1 _session_remove1 _session_connect1 _session_save0 _session_save1 _session_clean0 _session_refresh0 _session_validate0 _session_enumerate0 _session_describe0 _session_create1 _interface_destroy1 _session_populate3 _logs_validate0 _logs_clean0 _phases_validate0 _database_validate0 _binaries_validate0 _network_validate0 _permissions_validate0 _environment_validate0 _install_validate0 _version_validate0 _sudo_validate0 _wireguard_patch2 _wireguard_configure1 _wireguard_connect1 _wireguard_disconnect1 _wireguard_enumerate0 _wireguard_import1 _wireguard_list0 _wireguard_list1 _wireguard_add1 _wireguard_add3 _wireguard_link2 _wireguard_remove1 _wireguard_remove2 _wireguard_validate0 _wireguard_patch1 _wireguard_info1"
+COMBINATOR_FUNCTIONS="__bootstrap1 __environment_cache0 __phases_lift1 __init0 __batch1 __restore1 __import1 __helpenv1 __setintp2 __getintp1 __helpintp1 __helpintp2 __openvpn_start0 __openvpn_start1 __openvpn_stop1 __openvpn_add2 __openvpn_help0 __session_disconnect1 __session_stop1 __session_show0 __session_start0 __session_start1 __session_help0 __session_exists1 __session_conflicts2 __interface_check1 __stop1 __start1 __start0 __wireguard_start0 __wireguard_start1 __wireguard_stop1 __wireguard_add2 __wireguard_help0"
+BATCH_COMBINATOR_FUNCTIONS="___bootstrap2 ___init1 ___dumpenv1 ___dump0 ___batch0 ___sync0 ___list0 ___environment_inspect0 ___inspect0 ___openvpn_create1 ___openvpn_stop0 ___openvpn_inspect0 ___openvpn_clean0 ___openvpn_dump0 ___phases_sync1 ___phases_sync0 ___session_stop0 ___session_switch1 ___session_switch2 ___session_dump0 ___session_inspect0 ___session_prepare3 ___stop0 ___validate0 ___wireguard_create1 ___wireguard_inspect0 ___wireguard_stop0 ___wireguard_clean0 ___wireguard_clean1 ___wireguard_dump0"
+ANCHOR_FUNCTIONS="_error1 _error2 _error3 _fail2 _log1 _log2 _log3  _lift1 _database_init0 _environment_init1 _environment_cache1 _lift3 _setenv2 _getenv1 _unsetenv1 _cat1 _batch2 _printenv0 _env_sync0 _version_sync0 _version0 _link2 _remove1 _status0 _help0 _help1 _help2 _complete0 _complete1 _complete2 _complete3 _complete4 _complete5 _complete6 _helpenv0 _helpenv2 _database_enumerate0 _system_inspect0 _logs_inspect0 _phases_inspect0 _summary_inspect0 _prologue_inspect0 _openvpn_patch2 _openvpn_configure1 _openvpn_connect1 _openvpn_disconnect1 _openvpn_patch1 _openvpn_enumerate0 _openvpn_import1 _openvpn_list0 _openvpn_list1 _openvpn_add1 _openvpn_add3 _openvpn_link2 _openvpn_remove1 _openvpn_remove2 _openvpn_validate0 _openvpn_info1 _phases_copy0 _session_list0 _session_show1 _session_remove1 _session_connect1 _session_save0 _session_save1 _session_clean0 _session_refresh0 _session_validate0 _session_enumerate0 _session_describe0 _session_create1 _interface_destroy1 _session_populate3 _logs_validate0 _logs_clean0 _phases_validate0 _database_validate0 _binaries_validate0 _network_validate0 _permissions_validate0 _environment_validate0 _install_validate0 _version_validate0 _sudo_validate0 _wireguard_patch2 _wireguard_configure1 _wireguard_connect1 _wireguard_disconnect1 _wireguard_enumerate0 _wireguard_import1 _wireguard_list0 _wireguard_list1 _wireguard_add1 _wireguard_add3 _wireguard_link2 _wireguard_remove1 _wireguard_remove2 _wireguard_validate0 _wireguard_patch1 _wireguard_info1   __bootstrap1 __environment_cache0 __phases_lift1 __init0 __batch1 __restore1 __import1 __helpenv1 __setintp2 __getintp1 __helpintp1 __helpintp2 __openvpn_start0 __openvpn_start1 __openvpn_stop1 __openvpn_add2 __openvpn_help0 __session_disconnect1 __session_stop1 __session_show0 __session_start0 __session_start1 __session_help0 __session_exists1 __session_conflicts2 __interface_check1 __stop1 __start1 __start0 __wireguard_start0 __wireguard_start1 __wireguard_stop1 __wireguard_add2 __wireguard_help0   ___bootstrap2 ___init1 ___dumpenv1 ___dump0 ___batch0 ___sync0 ___list0 ___environment_inspect0 ___inspect0 ___openvpn_create1 ___openvpn_stop0 ___openvpn_inspect0 ___openvpn_clean0 ___openvpn_dump0 ___phases_sync1 ___phases_sync0 ___session_stop0 ___session_switch1 ___session_switch2 ___session_dump0 ___session_inspect0 ___session_prepare3 ___stop0 ___validate0 ___wireguard_create1 ___wireguard_inspect0 ___wireguard_stop0 ___wireguard_clean0 ___wireguard_clean1 ___wireguard_dump0"
 # Function-to-module mapping (format: "func:module.sh func:module.sh ...")
 # Used by process_arguments() for deterministic module loading
-FUNCTION_MODULES="__bootstrap1:database.sh ___bootstrap2:database.sh _lift1:database.sh _database_init0:database.sh _environment_init1:database.sh __environment_cache0:database.sh _environment_cache1:database.sh _lift3:database.sh __phases_lift1:database.sh ___init1:database.sh __init0:database.sh _setenv2:database.sh _getenv1:database.sh _unsetenv1:database.sh ___dumpenv1:database.sh ___dump0:database.sh _cat1:database.sh ___batch0:database.sh __batch1:database.sh _batch2:database.sh __restore1:database.sh _printenv0:database.sh _status0:help.sh _help0:help.sh _help1:help.sh _help2:help.sh _helpenv0:helpenv.sh __helpenv1:helpenv.sh _helpenv2:helpenv.sh __setintp2:helpenv.sh __getintp1:helpenv.sh __helpintp1:helpenv.sh __helpintp2:helpenv.sh _database_enumerate0:inspect.sh ___environment_inspect0:inspect.sh _system_inspect0:inspect.sh _logs_inspect0:inspect.sh _phases_inspect0:inspect.sh _summary_inspect0:inspect.sh _prologue_inspect0:inspect.sh ___inspect0:inspect.sh __openvpn_start0:openvpn.sh __openvpn_start1:openvpn.sh ___openvpn_create1:openvpn.sh _openvpn_patch2:openvpn.sh _openvpn_configure1:openvpn.sh _openvpn_connect1:openvpn.sh ___openvpn_stop0:openvpn.sh __openvpn_stop1:openvpn.sh _openvpn_disconnect1:openvpn.sh _openvpn_patch1:openvpn.sh ___openvpn_inspect0:openvpn.sh _openvpn_enumerate0:openvpn.sh _openvpn_import1:openvpn.sh _openvpn_list0:openvpn.sh _openvpn_list1:openvpn.sh _openvpn_add1:openvpn.sh __openvpn_add2:openvpn.sh _openvpn_add3:openvpn.sh _openvpn_link2:openvpn.sh _openvpn_remove1:openvpn.sh _openvpn_remove2:openvpn.sh _openvpn_validate0:openvpn.sh ___openvpn_clean0:openvpn.sh _openvpn_info1:openvpn.sh ___openvpn_dump0:openvpn.sh __openvpn_help0:openvpn.sh __session_disconnect1:session.sh ___session_stop0:session.sh __session_stop1:session.sh _session_list0:session.sh __session_show0:session.sh _session_show1:session.sh _session_remove1:session.sh __session_start0:session.sh __session_start1:session.sh ___session_switch1:session.sh ___session_switch2:session.sh _session_connect1:session.sh _session_save0:session.sh _session_save1:session.sh _session_clean0:session.sh _session_refresh0:session.sh _session_validate0:session.sh ___session_dump0:session.sh __session_help0:session.sh ___session_inspect0:session.sh _session_enumerate0:session.sh _session_describe0:session.sh _logs_validate0:validate.sh _logs_clean0:validate.sh _phases_validate0:validate.sh _database_validate0:validate.sh _binaries_validate0:validate.sh _network_validate0:validate.sh _permissions_validate0:validate.sh _environment_validate0:validate.sh _install_validate0:validate.sh _version_validate0:validate.sh _sudo_validate0:validate.sh ___validate0:validate.sh __wireguard_start0:wireguard.sh __wireguard_start1:wireguard.sh ___wireguard_create1:wireguard.sh _wireguard_patch2:wireguard.sh _wireguard_configure1:wireguard.sh _wireguard_connect1:wireguard.sh _wireguard_disconnect1:wireguard.sh ___wireguard_inspect0:wireguard.sh _wireguard_enumerate0:wireguard.sh ___wireguard_stop0:wireguard.sh __wireguard_stop1:wireguard.sh _wireguard_import1:wireguard.sh _wireguard_list0:wireguard.sh _wireguard_list1:wireguard.sh _wireguard_add1:wireguard.sh __wireguard_add2:wireguard.sh _wireguard_add3:wireguard.sh _wireguard_link2:wireguard.sh _wireguard_remove1:wireguard.sh _wireguard_remove2:wireguard.sh _wireguard_validate0:wireguard.sh ___wireguard_clean0:wireguard.sh ___wireguard_clean1:wireguard.sh _wireguard_patch1:wireguard.sh _wireguard_info1:wireguard.sh ___wireguard_dump0:wireguard.sh __wireguard_help0:wireguard.sh"
+FUNCTION_MODULES="__bootstrap1:database.sh ___bootstrap2:database.sh _lift1:database.sh _database_init0:database.sh _environment_init1:database.sh __environment_cache0:database.sh _environment_cache1:database.sh _lift3:database.sh __phases_lift1:database.sh ___init1:database.sh __init0:database.sh _setenv2:database.sh _getenv1:database.sh _unsetenv1:database.sh ___dumpenv1:database.sh ___dump0:database.sh _cat1:database.sh ___batch0:database.sh __batch1:database.sh _batch2:database.sh __restore1:database.sh _printenv0:database.sh ___sync0:database.sh _env_sync0:database.sh _version_sync0:database.sh _version0:database.sh __import1:database.sh ___list0:database.sh _link2:database.sh _remove1:database.sh _status0:help.sh _help0:help.sh _help1:help.sh _help2:help.sh _complete0:help.sh _complete1:help.sh _complete2:help.sh _complete3:help.sh _complete4:help.sh _complete5:help.sh _complete6:help.sh _helpenv0:helpenv.sh __helpenv1:helpenv.sh _helpenv2:helpenv.sh __setintp2:helpenv.sh __getintp1:helpenv.sh __helpintp1:helpenv.sh __helpintp2:helpenv.sh _database_enumerate0:inspect.sh ___environment_inspect0:inspect.sh _system_inspect0:inspect.sh _logs_inspect0:inspect.sh _phases_inspect0:inspect.sh _summary_inspect0:inspect.sh _prologue_inspect0:inspect.sh ___inspect0:inspect.sh __openvpn_start0:openvpn.sh __openvpn_start1:openvpn.sh ___openvpn_create1:openvpn.sh _openvpn_patch2:openvpn.sh _openvpn_configure1:openvpn.sh _openvpn_connect1:openvpn.sh ___openvpn_stop0:openvpn.sh __openvpn_stop1:openvpn.sh _openvpn_disconnect1:openvpn.sh _openvpn_patch1:openvpn.sh ___openvpn_inspect0:openvpn.sh _openvpn_enumerate0:openvpn.sh _openvpn_import1:openvpn.sh _openvpn_list0:openvpn.sh _openvpn_list1:openvpn.sh _openvpn_add1:openvpn.sh __openvpn_add2:openvpn.sh _openvpn_add3:openvpn.sh _openvpn_link2:openvpn.sh _openvpn_remove1:openvpn.sh _openvpn_remove2:openvpn.sh _openvpn_validate0:openvpn.sh ___openvpn_clean0:openvpn.sh _openvpn_info1:openvpn.sh ___openvpn_dump0:openvpn.sh __openvpn_help0:openvpn.sh _phases_copy0:phase.sh ___phases_sync1:phase.sh ___phases_sync0:phase.sh __session_disconnect1:session.sh ___session_stop0:session.sh __session_stop1:session.sh _session_list0:session.sh __session_show0:session.sh _session_show1:session.sh _session_remove1:session.sh __session_start0:session.sh __session_start1:session.sh ___session_switch1:session.sh ___session_switch2:session.sh _session_connect1:session.sh _session_save0:session.sh _session_save1:session.sh _session_clean0:session.sh _session_refresh0:session.sh _session_validate0:session.sh ___session_dump0:session.sh __session_help0:session.sh ___session_inspect0:session.sh _session_enumerate0:session.sh _session_describe0:session.sh _session_create1:session.sh __session_exists1:session.sh __session_conflicts2:session.sh _interface_destroy1:session.sh __interface_check1:session.sh ___session_prepare3:session.sh _session_populate3:session.sh ___stop0:session.sh __stop1:session.sh __start1:session.sh __start0:session.sh _logs_validate0:validate.sh _logs_clean0:validate.sh _phases_validate0:validate.sh _database_validate0:validate.sh _binaries_validate0:validate.sh _network_validate0:validate.sh _permissions_validate0:validate.sh _environment_validate0:validate.sh _install_validate0:validate.sh _version_validate0:validate.sh _sudo_validate0:validate.sh ___validate0:validate.sh __wireguard_start0:wireguard.sh __wireguard_start1:wireguard.sh ___wireguard_create1:wireguard.sh _wireguard_patch2:wireguard.sh _wireguard_configure1:wireguard.sh _wireguard_connect1:wireguard.sh _wireguard_disconnect1:wireguard.sh ___wireguard_inspect0:wireguard.sh _wireguard_enumerate0:wireguard.sh ___wireguard_stop0:wireguard.sh __wireguard_stop1:wireguard.sh _wireguard_import1:wireguard.sh _wireguard_list0:wireguard.sh _wireguard_list1:wireguard.sh _wireguard_add1:wireguard.sh __wireguard_add2:wireguard.sh _wireguard_add3:wireguard.sh _wireguard_link2:wireguard.sh _wireguard_remove1:wireguard.sh _wireguard_remove2:wireguard.sh _wireguard_validate0:wireguard.sh ___wireguard_clean0:wireguard.sh ___wireguard_clean1:wireguard.sh _wireguard_patch1:wireguard.sh _wireguard_info1:wireguard.sh ___wireguard_dump0:wireguard.sh __wireguard_help0:wireguard.sh"
 # === END AUTO-GENERATED ===
 # vpn-switch Architecture Test Suite
 #
@@ -195,6 +195,18 @@ TEST_BASE_DIR="${TMPDIR:-/tmp}/vpn-switch-arch-test.$$"
 TEST_SCRIPT="./vpn-switch.sh"
 
 # Profile for bootstrap
+# Options (before the positional args): --maxprocs N runs the top-level
+# test functions in parallel (xargs -P N, each in its own suite process and
+# sandbox); default 1 = the classic sequential run. (Ported from elebake.)
+MAXPROCS=1
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --maxprocs)   MAXPROCS="${2:?--maxprocs needs a value}"; shift 2 ;;
+    --maxprocs=*) MAXPROCS="${1#--maxprocs=}"; shift ;;
+    *) break ;;
+  esac
+done
+
 TEST_PROFILE="${1:-minimal}"
 
 # Keep databases on success (default: false = delete on success)
@@ -3347,6 +3359,7 @@ _help_records() {
         else if (tagblob ~ /@internal/) kind="internal"
         else if (tagblob ~ /@defgroup/) kind="defgroup"
         else if (tagblob ~ /@topic/)    kind="topic"
+        else if (tagblob ~ /@defcompletion/) kind="defcompletion"
         print type, fn, bname, kind, tagblob
       }
       /^#@help/ { if (pend) { emit("F","-"); pend=0 }
@@ -3354,7 +3367,7 @@ _help_records() {
       inblk && /^#@end$/ { inblk=0; pend=1; next }
       inblk { tagblob = tagblob ";" $0; next }
       {
-        isdef = ($0 ~ /^_+[a-z][a-z_]*[0-9]\(\) *\{/)
+        isdef = ($0 ~ /^_+[a-z][a-z0-9_]*[0-9]\(\) *\{/)
         fn=""
         if (isdef) { fn=$0; sub(/\(\).*/,"",fn) }
         if (pend) {
@@ -3401,7 +3414,7 @@ test_help_blocks_present() {
 # the required fields for its kind. Single assertion (problems accumulated).
 test_help_blocks_conform() {
   test_header "Help blocks: well-formed, known tags, required fields"
-  local recs problems="" allowed=" command summary group param option returns example see since defgroup order parent topic internal "
+  local recs problems="" allowed=" command summary group param option returns example see since defgroup order parent topic internal env completion defcompletion "
   recs=$(_help_records)
   local tmp; tmp=$(mktemp 2>/dev/null || echo "/tmp/help_conf.$$")
   printf '%s\n' "$recs" | awk -F'	' '$1=="B" || $1=="F"' > "$tmp" || true
@@ -3457,14 +3470,111 @@ test_help_graph_resolves() {
   local dup; dup=$(printf '%s\n' "$cmds" | grep -v '^$' | uniq -d)
   [ -n "$dup" ] && problems="$problems
   duplicate @command path(s): $(printf '%s' "$dup" | tr '\n' ',')"
+  # Completion sources: every <placeholder> in a @command usage resolves to a
+  # source - through @completion in its block or the @defcompletion table -
+  # and every source is one that complete_values() (include/help.sh) knows.
+  local vocab=" files dirs wireguard-config openvpn-config any-config wireguard-category openvpn-group session pid env-var interpreter-fn phase profile layer command-path none "
+  local defc pair nm src usage over
+  defc=$(printf '%s\n' "$tags" | sed -n 's/^# *@defcompletion  *\([A-Za-z_]*\)  *\([a-z-]*\).*/\1 \2/p')
+  for pair in $(printf '%s\n' "$defc" | tr ' ' '='); do
+    nm=${pair%%=*}; src=${pair#*=}
+    case "$vocab" in *" $src "*) ;; *) problems="$problems
+  @defcompletion '$nm' uses unknown source '$src'" ;; esac
+  done
+  local tmpc; tmpc=$(mktemp 2>/dev/null || echo "/tmp/help_compl.$$")
+  printf '%s\n' "$recs" | awk -F'	' '$1=="B" && $4=="command"' > "$tmpc" || true
+  local type fn sentinel kind tagblob
+  while IFS='	' read -r type fn sentinel kind tagblob; do
+    [ -n "${type:-}" ] || continue
+    usage=$(printf '%s' "$tagblob" | tr ';' '\n' | sed -n 's/^# *@command  *//p' | head -1)
+    over=$(printf '%s' "$tagblob" | tr ';' '\n' | sed -n 's/^# *@completion  *\([A-Za-z_]*\)  *\([a-z-]*\).*/\1 \2/p')
+    for pair in $(printf '%s\n' "$over" | tr ' ' '='); do
+      nm=${pair%%=*}; src=${pair#*=}
+      case "$vocab" in *" $src "*) ;; *) problems="$problems
+  @completion '$nm' in '$fn' uses unknown source '$src'" ;; esac
+    done
+    for nm in $(printf '%s\n' "$usage" | grep -o '<[^>]*>' | tr -d '<>'); do
+      printf '%s\n' "$over" | cut -d' ' -f1 | grep -qx "$nm" && continue
+      printf '%s\n' "$defc" | cut -d' ' -f1 | grep -qx "$nm" || problems="$problems
+  placeholder <$nm> in '$usage' has no @completion/@defcompletion source"
+    done
+  done < "$tmpc"
+  rm -f "$tmpc"
   if [ -z "$problems" ]; then
-    pass "Help graph resolves (groups, see-refs, uniqueness)"
+    pass "Help graph resolves (groups, see-refs, uniqueness, completion sources)"
   else
     fail "Help graph has unresolved references:$problems"
   fi
 }
 
+# test_help_env_documented - every @command function documents the environment
+# variables its body uses (scripts/audit-env-docs.sh; @env tag or literal
+# mention in the block). Internal plumbing vars are whitelisted in the script.
+test_help_env_documented() {
+  test_header "Help blocks: used environment variables documented (@env)"
+  local missing
+  missing=$(sh scripts/audit-env-docs.sh VPN_SWITCH vpn-switch.sh include/*.sh 2>/dev/null | awk '$1=="MISSING" && $2=="command"')
+  if [ -z "$missing" ]; then
+    pass "every @command function documents its environment variables"
+  else
+    fail "undocumented environment variables in @command help blocks:"
+    printf '%s\n' "$missing" | sed 's/^/       - /'
+  fi
+}
+
+# parallel_main - run every test function of the active filter as its own
+# suite process (sequential inside), MAXPROCS at a time via xargs -P; then
+# replay the outputs in list order and print an aggregated summary.
+parallel_main() {
+  local outdir rc=0 t
+  outdir=$(mktemp -d "${TMPDIR:-/tmp}/vsw-par.XXXXXX") || exit 1
+  echo "vpn-switch Architecture Test Suite (parallel, -P $MAXPROCS)"
+  echo ""
+  local tests
+  if [ "$TEST_FILTER" = "$ALL_TESTS" ]; then
+    # default run: the REAL test list are the should_run_test lines in main
+    # (ALL_TESTS is the grep-derived filter BASE and also catches the
+    # framework functions test_header/test_summary/test_setup)
+    tests=$(grep -E '^[[:space:]]*should_run_test ' "$0" | awk '{print $2}')
+  else
+    tests="$TEST_FILTER"
+  fi
+  printf '%s\n' $tests | xargs -n1 -P "$MAXPROCS" -I{} \
+    sh -c 'sh "$0" "$1" "$2" {} > "$3/{}.out" 2>&1; echo $? > "$3/{}.rc"' \
+    "$0" "$TEST_PROFILE" "$KEEP_DATABASES" "$outdir"
+  for t in $tests; do
+    cat "$outdir/$t.out" 2>/dev/null
+    [ "$(cat "$outdir/$t.rc" 2>/dev/null)" = "0" ] || rc=1
+  done
+  echo ""
+  echo "========================================"
+  echo "Aggregated Summary (parallel run)"
+  echo "========================================"
+  awk '
+    /^Test Functions:/    { tf += $3 }
+    /^Total Assertions:/  { ta += $3 }
+    /^Passed Assertions:/ { pa += $3 }
+    /^Failed Assertions:/ { fa += $3 }
+    END {
+      printf "Test Functions:     %d\n", tf
+      printf "Total Assertions:   %d\n", ta
+      printf "Passed Assertions:  %d\n", pa
+      printf "Failed Assertions:  %d\n", fa
+    }' "$outdir"/*.out
+  if [ "$rc" -eq 0 ]; then
+    echo ""; echo "ALL TESTS PASSED"; rm -rf "$outdir"
+  else
+    echo ""; echo "SOME TESTS FAILED"; echo "Per-test outputs preserved in: $outdir"
+  fi
+  return $rc
+}
+
 main() {
+  if [ "$MAXPROCS" -gt 1 ]; then
+    parallel_main
+    return $?
+  fi
+
   echo "${COLOR_BLUE}========================================${COLOR_RESET}"
   echo "${COLOR_BLUE}vpn-switch Architecture Test Suite${COLOR_RESET}"
   echo "${COLOR_BLUE}========================================${COLOR_RESET}"
@@ -3508,6 +3618,7 @@ main() {
   should_run_test test_help_blocks_present
   should_run_test test_help_blocks_conform
   should_run_test test_help_graph_resolves
+  should_run_test test_help_env_documented
 
   # Print summary
   test_summary

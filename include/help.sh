@@ -3,9 +3,11 @@
 # Source of truth for the generated help system. The help text is assembled
 # mechanically from #@help doc-blocks declared above each anchor function (see
 # docs/HELP_TEMPLATE_SPEC.md). This module owns:
-#   - the @defgroup taxonomy and @topic entries (below),
+#   - the @defgroup taxonomy, @topic entries and the @defcompletion table (below),
 #   - the runtime parser + renderers (help_* functions),
-#   - the user-facing entry points (_help0 overview, _help1 topic/detail).
+#   - the user-facing entry points (_help0 overview, _help1 topic/detail),
+#   - the completion back-end (_completeN: candidates for the shell, derived
+#     from the same corpus - see completion/vpn-switch.bash).
 # Drift between code and help is caught by the architecture tests A/B/C.
 
 # --- Help taxonomy: overview sections, ordered by @order ---------------------
@@ -69,6 +71,37 @@
 #   default  - user-managed, set via 'session save' with no name
 #@end
 
+# --- Completion sources: where a usage placeholder takes its candidates ------
+# One line per placeholder name as it appears in @command usages (<config>,
+# <name>|<PID>, [<location>] ...). 'vpn-switch complete' (the bash-completion
+# back-end) resolves a placeholder to its source here; a command block may
+# override one name with '@completion <name> <source>' (e.g. <config> under
+# openvpn). The source vocabulary is implemented in complete_values() below;
+# architecture test C checks that every placeholder of every usage resolves.
+
+#@help
+# @defcompletion file       files
+# @defcompletion path       files
+# @defcompletion profile    profile
+# @defcompletion VAR        env-var
+# @defcompletion VALUE      none
+# @defcompletion value      none
+# @defcompletion fn         interpreter-fn
+# @defcompletion subcommand command-path
+# @defcompletion words      none
+# @defcompletion name       session
+# @defcompletion PID        pid
+# @defcompletion from       session
+# @defcompletion location   layer
+# @defcompletion category   wireguard-category
+# @defcompletion group      openvpn-group
+# @defcompletion config     wireguard-config
+# @defcompletion alias      none
+# @defcompletion target     wireguard-config
+# @defcompletion interface  none
+# @defcompletion phase      phase
+#@end
+
 # Helper functions for centralized help display
 # These are called by _help1 for the new pattern: "vpn-switch help <module>"
 
@@ -90,6 +123,16 @@ help_source_files() {
 #   MODE=overview  -> grouped command summaries (vpn-switch help)
 #   MODE=detail    -> full block for the command path TARGET (vpn-switch help <path>)
 #   MODE=group     -> overview restricted to one @defgroup id TARGET (help wireguard)
+#   MODE=prefix    -> every command whose path starts with TARGET
+#   MODE=query     -> detail, group or prefix, whichever TARGET names
+#   MODE=manpage   -> Markdown definition lists for the man page
+#   MODE=complete  -> candidates for the next word; TARGET = the words typed so
+#                     far joined by \037, the last one being the (possibly
+#                     empty) word under the cursor. Emits "word <w>" for
+#                     literal command words already filtered by that prefix,
+#                     and "src <source>" for placeholders (resolved through
+#                     @completion / @defcompletion); complete_values() turns
+#                     a source into values.
 # Honours VPN_SWITCH_DISPLAY_ANSI for colour. Pure read of the doc-blocks.
 help_render() {
   local mode="$1" target="${2:-}"
@@ -103,9 +146,60 @@ help_render() {
     function trim(s){ sub(/^[ \t]+/,"",s); sub(/[ \t]+$/,"",s); return s }
     function pathof(u,  p){ p=u; sub(/[ \t]*[<[].*$/,"",p); return trim(p) }
     function mesc(s){ gsub(/</,"\\<",s); gsub(/>/,"\\>",s); gsub(/\|/,"\\|",s); return s }
+    # --- completion helpers ---
+    # cand: emit one candidate line once; literal words are filtered by the
+    # prefix under the cursor (an empty prefix matches everything).
+    function cand(kind, v, pre,   key){
+      if (kind=="word" && pre!="" && index(v, pre)!=1) return
+      key=kind " " v; if (key in seen) return; seen[key]=1; print key }
+    # tokens: split a usage line into argument tokens, brackets stripped:
+    # "session show [<name>|<PID>]" -> session, show, <name>|<PID>
+    function tokens(u, t,   n, i, x, k){ n=split(u, raw, " "); k=0
+      for(i=1;i<=n;i++){ x=raw[i]; gsub(/[\[\]]/,"",x); if(x!="") t[++k]=x } return k }
+    # isph: is <nm> a placeholder of command p? The table decides - a name
+    # with a @completion/@defcompletion source is a placeholder, anything
+    # else written in <...> is a literal alternative (<a|b>, <stage>|all).
+    function isph(p, nm){ return ((p SUBSEP nm) in ccomp) || (nm in defc) }
+    function srcof(p, nm){ return ((p SUBSEP nm) in ccomp) ? ccomp[p,nm] : defc[nm] }
+    # accepts: does a typed word satisfy a usage token? A placeholder part
+    # accepts every word, a literal part only itself. Only a token written
+    # with <...> can hold placeholders: a bare command word is literal even
+    # when a placeholder of the same name exists.
+    function accepts(p, t, v,   n, a, parts, nm, br){ n=split(t, parts, "|"); br=(t ~ /</)
+      for(a=1;a<=n;a++){ nm=parts[a]; gsub(/[<>]/,"",nm); if ((br && isph(p,nm)) || nm==v) return 1 } return 0 }
+    # candidates_for: what a usage token offers at the cursor - literal parts
+    # as words, placeholder parts as their source (command-path expands to
+    # the command words right here). literalonly: after "help", only paths.
+    function candidates_for(p, t, pre, literalonly, ctx,   n, a, parts, nm, src, br){ n=split(t, parts, "|"); br=(t ~ /</)
+      for(a=1;a<=n;a++){
+        nm=parts[a]; gsub(/[<>]/,"",nm)
+        if (!(br && isph(p,nm))) { cand("word", nm, pre); continue }
+        if (literalonly) continue
+        src=srcof(p,nm)
+        if (src=="command-path") { command_words(pre); continue }
+        cand("src", src (ctx!="" ? " " ctx : ""), "") } }
+    # command_words: what "help <...>" completes to - first words of every
+    # command path, the group ids and the concept topics of _help1.
+    function command_words(pre,   pp, f, b){
+      for(pp in cu){ f=pp; sub(/ .*/,"",f); cand("word", f, pre) }
+      for(b=1;b<=ndg;b++) cand("word", dgall[b], pre)
+      cand("word","environment",pre); cand("word","profile",pre); cand("word","phases",pre) }
+    # complete_pass: match every usage against the typed words from index
+    # "from" on and collect the candidates at the cursor. ctxname names the
+    # placeholder whose typed word travels along as context (unused here,
+    # elebake passes "stage" for per-stage media).
+    function complete_pass(from, n, literalonly,   p, k, ok, i, j, ctx, nm, parts, a, np){
+      for (p in cu) {
+        k=tokens(cu[p], tok); ok=1; ctx=""
+        for(i=from;i<n;i++){ j=i-from+1
+          if (j>k || !accepts(p, tok[j], wd[i])) { ok=0; break }
+          if (ctxname!="" && tok[j] ~ /</) { np=split(tok[j], parts, "|")
+            for(a=1;a<=np;a++){ nm=parts[a]; gsub(/[<>]/,"",nm); if (nm==ctxname && isph(p,nm)) ctx=wd[i] } } }
+        j=n-from+1
+        if (ok && j<=k) candidates_for(p, tok[j], cur, literalonly, ctx) } }
     BEGIN{ seq=0 }
     /^#@help/ { inblk=1; kind=""; usage=""; summary=""; ret=""; body="";
-                gc=0; pc=0; ec=0; sc=0; dgid=""; dgtitle=""; dgord=999; topic="";
+                gc=0; pc=0; ec=0; sc=0; vc=0; xc=0; dgid=""; dgtitle=""; dgord=999; topic="";
                 next }
     inblk && /^#@end$/ {
       inblk=0
@@ -114,6 +208,8 @@ help_render() {
         cnp[p]=pc; for(i=1;i<=pc;i++) cp[p,i]=prm[i]
         cne[p]=ec; for(i=1;i<=ec;i++) cex[p,i]=exs[i]
         cns[p]=sc; for(i=1;i<=sc;i++) cse[p,i]=seer[i]
+        cnv[p]=vc; for(i=1;i<=vc;i++) cv[p,i]=env[i]
+        for(i=1;i<=xc;i++){ nm=cmpl[i]; sub(/[ \t].*$/,"",nm); src=cmpl[i]; sub(/^[^ \t]+[ \t]+/,"",src); ccomp[p,nm]=src }
         for(i=1;i<=gc;i++){ g=grp[i]; gmn[g]++; gm[g,gmn[g]]=p }
       } else if (kind=="defgroup") {
         dgt[dgid]=dgtitle; dgo[dgid]=dgord; dgb[dgid]=body; dgall[++ndg]=dgid
@@ -132,6 +228,7 @@ help_render() {
         else if(name=="summary"){summary=val}
         else if(name=="group"){grp[++gc]=val}
         else if(name=="param"){prm[++pc]=val}
+        else if(name=="env"){env[++vc]=val}
         else if(name=="option"){prm[++pc]="--" val}
         else if(name=="returns"){ret=val}
         else if(name=="example"){exs[++ec]=val}
@@ -140,6 +237,8 @@ help_render() {
         else if(name=="order"){dgord=val+0}
         else if(name=="topic"){kind="topic"; topic=val}
         else if(name=="internal"){kind="internal"}
+        else if(name=="completion"){cmpl[++xc]=val}
+        else if(name=="defcompletion"){kind="defcompletion"; nm=val; sub(/[ \t].*$/,"",nm); src=val; sub(/^[^ \t]+[ \t]+/,"",src); defc[nm]=src}
         next
       }
       if (match(line,/^#[ \t][ \t]/)) { t=line; sub(/^#[ \t]+/,"",t); body=(body==""?t:body "\n" t) }
@@ -152,6 +251,17 @@ help_render() {
         else { isg=0; for(a=1;a<=ndg;a++) if(dgall[a]==target) isg=1
                if (isg) mode="group"; else mode="prefix" }
       }
+      # complete mode: candidates for the word under the cursor. Every usage
+      # whose leading tokens accept the words already typed contributes its
+      # token at the cursor position. "help <path>" completes command paths
+      # (literal words only), plus group ids and topics right after "help".
+      if (mode=="complete") {
+        n=split(target, wd, "\037"); if (n==0) { n=1; wd[1]="" }
+        cur=wd[n]
+        complete_pass(1, n, 0)
+        if (wd[1]=="help" && n>=2) { if (n==2) command_words(cur); complete_pass(2, n, 1) }
+        exit 0
+      }
       # width for alignment (measured on the printed usage, not the path)
       w=0; for(p in cu){ if(length("vpn-switch " cu[p]) > w) w=length("vpn-switch " cu[p]) }
       w+=2
@@ -161,6 +271,7 @@ help_render() {
         print "  " cs[target]
         if (cnp[target]>0){ print ""; print ch "Arguments:" cr; for(i=1;i<=cnp[target];i++) print "  " cp[target,i] }
         if (cr_[target]!=""){ print ""; print ch "Output:" cr "  " cr_[target] }
+        if (cnv[target]>0){ print ""; print ch "Environment:" cr; for(i=1;i<=cnv[target];i++){ v=cv[target,i]; print "  " v }; print "  " cg "(details: vpn-switch helpenv <VAR>)" cr }
         if (cne[target]>0){ print ""; print ch "Examples:" cr; for(i=1;i<=cne[target];i++) print "  " cc cex[target,i] cr }
         if (cns[target]>0){ print ""; print ch "See also:" cr; for(i=1;i<=cns[target];i++) print "  " cc "vpn-switch " cse[target,i] cr }
         exit 0
@@ -213,6 +324,7 @@ help_render() {
 # @summary Show a brief status of the active VPN and its interfaces
 # @group   diagnostics
 # @returns VPN status and network interface state
+# @env     VPN_SWITCH_INTERFACE_<proto>  interface name pattern consulted per protocol
 # @example vpn-switch status
 # @see     session list
 #@end
@@ -246,6 +358,7 @@ EOF
 # @group   setup
 # @param   subcommand  command group (wireguard, session, ...) or topic (environment, profile)
 # @returns help text (no database required)
+# @env     VPN_SWITCH_DISPLAY_ANSI  0 disables colored output
 # @example vpn-switch help session
 #@end
 _help0() {
@@ -765,5 +878,137 @@ EOF
 #@end
 _help2() {
   help_render query "$1 $2"
+}
+
+# --- Completion back-end -----------------------------------------------------
+# 'vpn-switch complete <words...>' answers the shell's completion request from
+# the help corpus: literal command words come straight from the @command
+# usages, placeholders resolve through @completion / @defcompletion to a
+# source, and complete_values() reads that source from the database. The
+# shell side (completion/vpn-switch.bash) is a thin loop over these lines.
+# Output is plain candidates - interpreter pinned to cat, never executed.
+
+# complete_words WORD... - the words typed so far, the last one under the cursor.
+complete_words() {
+  local cur="" words="" a
+  if [ $# -gt 0 ]; then
+    eval "cur=\${$#}"
+    words="$1"; shift
+    for a in "$@"; do words="$words$(printf '\037')$a"; done
+  fi
+  help_render complete "$words" | complete_expand "$cur" | sort -u
+}
+
+# complete_expand CUR - turn "word ..." / "src ..." lines into candidates,
+# dynamic values filtered by the prefix under the cursor.
+complete_expand() {
+  local cur="$1" line v
+  while IFS= read -r line; do
+    case "$line" in
+      "word "*) printf '%s\n' "${line#word }" ;;
+      "src "*)
+        complete_values "${line#src }" | while IFS= read -r v; do
+          case "$v" in "$cur"*|@*) printf '%s\n' "$v" ;; esac
+        done ;;
+    esac
+  done
+}
+
+# complete_values SOURCE - the values behind a @defcompletion source. Reads
+# the database directly (the list commands format for humans). @files and
+# @dirs are directives for the shell to complete paths itself.
+complete_values() {
+  local base="$VPN_SWITCH_BASE" d f
+  case "$1" in
+    files) echo "@files" ;;
+    dirs)  echo "@dirs" ;;
+    wireguard-config) for f in "$base"/wireguard/*.conf; do [ -e "$f" ] && printf '%s\n' "${f##*/}"; done ;;
+    openvpn-config)   for f in "$base"/openvpn/*.ovpn;   do [ -e "$f" ] && printf '%s\n' "${f##*/}"; done ;;
+    any-config) complete_values wireguard-config; complete_values openvpn-config ;;
+    wireguard-category) for d in "$base"/wireguard/*/; do [ -d "$d" ] && basename "$d"; done ;;
+    openvpn-group)      for d in "$base"/openvpn/*/;   do [ -d "$d" ] && basename "$d"; done ;;
+    session) ls "$base/session"  2>/dev/null ;;
+    pid)
+      for d in "$base"/.session/*/; do
+        d=${d%/}; d=${d##*/}
+        case "$d" in ''|*[!0-9]*) ;; *) printf '%s\n' "$d" ;; esac
+      done ;;
+    env-var)
+      {
+        ls "$VPN_SWITCH_TEMPLATE_DIR/environment" 2>/dev/null
+        [ -d "$base/.env/default" ] && ls "$base/.env/default" 2>/dev/null
+        [ -d "$base/.env/local" ]   && ls "$base/.env/local" 2>/dev/null
+      } | grep -v '^VPN_SWITCH_PROFILE_' ;;
+    interpreter-fn)
+      printf '%s\n' terminal combinator batch
+      for f in $ANCHOR_FUNCTIONS; do
+        f=${f#___}; f=${f#__}; f=${f#_}
+        printf '%s\n' "$f" "${f%[0-9]}"
+      done ;;
+    phase)   printf '%s\n' ${VPN_SWITCH_PHASES_CONNECT:-firewall vpn dns} ;;
+    profile)
+      for f in "$VPN_SWITCH_TEMPLATE_DIR"/environment/VPN_SWITCH_PROFILE_*; do
+        [ -e "$f" ] && printf '%s\n' "${f##*/VPN_SWITCH_PROFILE_}" | tr '[:upper:]' '[:lower:]'
+      done ;;
+    layer)   printf '%s\n' local default template ;;
+    none|*)  ;;
+  esac
+}
+
+#@help _complete0
+# @command complete [<words>]
+# @summary Print completion candidates for a partially typed command line (bash-completion back-end)
+# @group   setup
+# @param   words  the words typed so far; the last one is the (possibly empty) word under the cursor
+# @returns one candidate per line, sorted; the lines @files and @dirs ask the shell to complete paths
+# @env     VPN_SWITCH_TEMPLATE_DIR  profiles and documented variables come from the shipped templates
+# @example vpn-switch complete wireguard st
+# @example vpn-switch complete session show ''
+# @see help
+#@end
+_complete0() {
+  complete_words
+}
+
+#@help _complete1
+# @internal arity-1 sibling of 'complete'
+#@end
+_complete1() {
+  complete_words "$@"
+}
+
+#@help _complete2
+# @internal arity-2 sibling of 'complete'
+#@end
+_complete2() {
+  complete_words "$@"
+}
+
+#@help _complete3
+# @internal arity-3 sibling of 'complete'
+#@end
+_complete3() {
+  complete_words "$@"
+}
+
+#@help _complete4
+# @internal arity-4 sibling of 'complete'
+#@end
+_complete4() {
+  complete_words "$@"
+}
+
+#@help _complete5
+# @internal arity-5 sibling of 'complete'
+#@end
+_complete5() {
+  complete_words "$@"
+}
+
+#@help _complete6
+# @internal arity-6 sibling of 'complete' (longest usage: openvpn add <group> <config> <alias> plus cursor)
+#@end
+_complete6() {
+  complete_words "$@"
 }
 

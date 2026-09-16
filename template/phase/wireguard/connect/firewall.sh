@@ -1,6 +1,10 @@
 #!/bin/sh
 # Firewall phase for WireGuard connection
 # Configures PF packet filter with VPN DNS and remote endpoints
+#
+# Environment:
+#   VPN_SWITCH_EXT_IF  external interface the PF rules anchor on
+#   (details: vpn-switch helpenv VPN_SWITCH_EXT_IF)
 
 # Unpack context variables (for generation-time expansion)
 eval "$VPN_SWITCH_CONTEXT_CONNECT"

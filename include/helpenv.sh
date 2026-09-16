@@ -24,7 +24,7 @@
 #   helpintp <fn> [location]      = helpenv <resolved> [location]
 
 #@help _helpenv0
-# @command helpenv [<name> [location]]
+# @command helpenv [<name> [<location>]]
 # @summary Show env-var documentation (value + docs); with no argument, list all
 # @group configuration
 # @param name      variable name (full, or short for VPN_SWITCH_ / VPN_SWITCH_INTERPRETER_)
@@ -34,6 +34,7 @@
 # @example vpn-switch helpenv wireguard_start template
 # @see getenv
 # @see helpintp
+# @env VPN_SWITCH_TEMPLATE_DIR  where the shipped variable templates (and their docs) live
 #@end
 _helpenv0() {
   local base="$VPN_SWITCH_BASE"
@@ -154,7 +155,7 @@ __getintp1() {
 }
 
 #@help __helpintp1
-# @command helpintp <fn> [location]
+# @command helpintp <fn> [<location>]
 # @summary Show docs for an interpreter variable (class default or per-function)
 # @group configuration
 # @param fn        class default (terminal|combinator|batch) or function name (e.g. wireguard_start0)

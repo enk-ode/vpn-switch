@@ -98,6 +98,7 @@ carries: `@command`, `@defgroup`, or `@topic`. A function block may instead carr
 | `@example <cmd>` | ◻ | 0..n | A runnable example line. |
 | `@see <ref>` | ◻ | 0..n | Cross-reference: a command path or a group id. |
 | `@since <ver>` | ◻ | 0..1 | First version (optional changelog hook). |
+| `@completion <placeholder> <source>` | ◻ | 0..n | Where a usage placeholder takes its completion candidates when the global `@defcompletion` table is wrong for this command (e.g. `<config>` under `openvpn`). See §3.5. |
 
 ### 3.2 Group-definition block (defines an overview section)
 
@@ -127,6 +128,44 @@ For curated concept text that belongs in the overview but isn't a command
 | `@internal [reason]` | ✅ | 1 | Marks a function as plumbing — excluded from help. Satisfies presence (A) with one line. |
 
 ---
+
+### 3.5 Completion sources (`@defcompletion`, `@completion`)
+
+The corpus also drives shell completion: `vpn-switch complete <words...>`
+(back-end for `completion/vpn-switch.bash`) reads the `@command` usages and
+answers "what may come next". Literal words and `a|b|c` alternatives come
+straight from the usage line. A **placeholder** (`<config>`, `<name>|<PID>`,
+`[<location>]`) needs a *source* — the list its values come from:
+
+```
+#@help
+# @defcompletion config    wireguard-config
+# @defcompletion name      session
+# @defcompletion file      files
+#@end
+```
+
+| Tag | Where | Meaning |
+|---|---|---|
+| `@defcompletion <placeholder> <source>` | one free-standing block in `include/help.sh` | Default source for every usage that uses `<placeholder>`. |
+| `@completion <placeholder> <source>` | inside a command block | Overrides the default for that command only. |
+
+Rules:
+
+- A placeholder is the name between `<` and `>`; `<name>|<PID>` names two.
+  Write every placeholder in angle brackets (`[<location>]`, not `[location]`)
+  — a bare word in a usage line is a literal command word.
+- Sources are a closed vocabulary implemented by `complete_values()` in
+  `include/help.sh`: `files`, `dirs` (the shell completes paths),
+  `wireguard-config`, `openvpn-config`, `any-config`, `wireguard-category`,
+  `openvpn-group`, `session`, `pid`, `env-var`, `interpreter-fn`, `phase`,
+  `profile`, `layer`, `command-path` (what `help` takes), `none` (free text,
+  nothing offered). Adding a source means adding a case there and a word to
+  the vocabulary list in test C.
+- Test C fails when a usage placeholder resolves to no source, or a source is
+  not in the vocabulary. Renaming a placeholder in a usage line therefore
+  either finds its row in the table or breaks the build — never silently
+  loses completion.
 
 ## 4. Validation rules = the architecture tests
 

@@ -43,13 +43,13 @@ done
 SCRIPT="${TARGET_FILE:-vpn-switch.sh}"
 INCLUDE_DIR="include"
 TEMP_FILE="/tmp/vpn-switch-metadata.$$"
-MAIN_SCRIPT="vpn-switch.sh"
+MAIN_SCRIPT="vpn-switch.sh include/engine.sh"   # the wrapper and the engine: always loaded, never a module
 
 # Extract functions from main script (always vpn-switch.sh, not target)
 # This ensures all scripts get the complete function list
-MAIN_BATCH_COMBINATORS=$(grep -o '^___[a-z][a-z_]*[0-9]()' "$MAIN_SCRIPT" 2>/dev/null | sed 's/().*//' | tr '\n' ' ' | sed 's/ $//')
-MAIN_TERMINALS=$(grep -o '^_[a-z][a-z_]*[0-9]()' "$MAIN_SCRIPT" 2>/dev/null | grep -v '^___' | grep -v '^__' | sed 's/().*//' | tr '\n' ' ' | sed 's/ $//')
-MAIN_COMBINATORS=$(grep -o '^__[a-z][a-z_]*[0-9]()' "$MAIN_SCRIPT" 2>/dev/null | grep -v '^___' | sed 's/().*//' | tr '\n' ' ' | sed 's/ $//')
+MAIN_BATCH_COMBINATORS=$(grep -ho '^___[a-z][a-z0-9_]*[0-9]()' $MAIN_SCRIPT 2>/dev/null | sed 's/().*//' | tr '\n' ' ' | sed 's/ $//')
+MAIN_TERMINALS=$(grep -ho '^_[a-z][a-z0-9_]*[0-9]()' $MAIN_SCRIPT 2>/dev/null | grep -v '^___' | grep -v '^__' | sed 's/().*//' | tr '\n' ' ' | sed 's/ $//')
+MAIN_COMBINATORS=$(grep -ho '^__[a-z][a-z0-9_]*[0-9]()' $MAIN_SCRIPT 2>/dev/null | grep -v '^___' | sed 's/().*//' | tr '\n' ' ' | sed 's/ $//')
 
 # Extract functions from modules and build function-to-module mapping
 # Format: "function:module function:module ..."
@@ -61,6 +61,7 @@ MODULE_COMBINATORS=""
 for module_file in "$INCLUDE_DIR"/*.sh; do
   [ -f "$module_file" ] || continue
   module_name=$(basename "$module_file")
+  [ "$module_name" != engine.sh ] || continue   # the engine is no module: sourced first, always
 
   # Extract function names from this module (match all anchor functions: _, __, ___)
   funcs=$(grep -o '^_[a-z_]*[0-9]() {' "$module_file" 2>/dev/null | sed 's/() {.*//' || true)

@@ -1,6 +1,10 @@
 #!/bin/sh
 # VPN phase for OpenVPN connection
 # Starts OpenVPN daemon
+#
+# Environment:
+#   VPN_SWITCH_BINARY_openvpn  path of the openvpn binary invoked
+#   (details: vpn-switch helpenv <VAR>)
 
 # Unpack context variables (for generation-time expansion)
 eval "$VPN_SWITCH_CONTEXT_CONNECT"

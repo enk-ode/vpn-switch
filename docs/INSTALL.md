@@ -163,12 +163,42 @@ user data, separate from install.
 
 ### FreeBSD
 
-The installer drops `vpn_switch` in `$(PREFIX)/etc/rc.d/` so the host's service
-manager knows about it. Enable and start as usual:
+The installer drops `vpn_switch` in `$(PREFIX)/etc/rc.d/` and a devd rule in
+`$(PREFIX)/etc/devd/vpn_switch.conf`. Together they bring the **saved default
+session** up at boot — before `ntpd`/`openntpd`, which matters when the
+firewall lets nothing but the tunnel out and the time daemons could not even
+resolve their servers — and again whenever the uplink reports `LINK_UP`
+(cable back, lagg failover). Starting is idempotent: while a session is
+connected, both paths do nothing.
+
+The service runs vpn-switch **as the user whose database holds the
+sessions**, so files under the database keep their owner. That user is derived
+from `sudo gmake install` (`SUDO_USER`) and written, together with the
+database and the uplink, to `$(PREFIX)/etc/rc.conf.d/vpn_switch` — only when
+that file does not exist yet, so edits survive reinstalls:
 
 ```sh
-service vpn_switch enable                # or via /etc/rc.conf
+vpn_switch_user="brj"
+vpn_switch_base="/home/<user>/.vpn-switch/db"
+vpn_switch_ifname="lagg0"
 ```
+
+Override at install time (`sudo gmake install VPN_SWITCH_RC_USER=alice
+VPN_SWITCH_RC_IFNAME=em0`) or edit the file. Optional: `vpn_switch_session`
+(a saved session other than `default`), `vpn_switch_wait` (seconds to wait for
+link and address, default 30). Then:
+
+```sh
+vpn-switch session save                  # as the user: the session to resume is 'default'
+sysrc vpn_switch_enable=YES
+service devd restart                     # load the LINK_UP rule
+service vpn_switch start                 # or reboot
+```
+
+The connect steps run under the database's interpreter pins (`sudo sh`), so
+the user needs passwordless sudo for them — see [TUTORIAL_SUDO.md](TUTORIAL_SUDO.md).
+`service vpn_switch stop` tears every session down (also at shutdown),
+`service vpn_switch status` shows the tunnel state.
 
 The DNS helpers (`wg-resolvconf-up/down`, `ovpn-resolvconf-up/down`) are
 **FreeBSD-oriented**: they call `service local_unbound restart` to flush DNS
