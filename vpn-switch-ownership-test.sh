@@ -15,7 +15,7 @@
 #   fully deterministic and needs no real WireGuard interface.
 #
 # Functions under test:
-#   session_peer_matches_interface  (vpn-switch.sh) - used by is_session_alive()
+#   session_peer_matches_interface  (include/session.sh) - used by is_session_alive()
 #   _session_refresh0               (include/session.sh) - 'session refresh'
 #
 # POSIX shell compliant.
@@ -38,11 +38,11 @@ trap 'rm -rf "$WORK"' EXIT INT TERM
 # --- Extract the functions under test from source into this shell -------------
 # Both are plain POSIX functions; extracting their definitions avoids running
 # vpn-switch's top-level dispatch.
-eval "$(sed -n '/^session_peer_matches_interface() {/,/^}/p' "$ROOT/vpn-switch.sh")"
+eval "$(sed -n '/^session_peer_matches_interface() {/,/^}/p' "$ROOT/include/session.sh")"
 eval "$(sed -n '/^_session_refresh0() {/,/^}/p' "$ROOT/include/session.sh")"
 
 if ! command -v session_peer_matches_interface >/dev/null 2>&1; then
-  echo "ERROR: could not extract session_peer_matches_interface from vpn-switch.sh" >&2
+  echo "ERROR: could not extract session_peer_matches_interface from include/session.sh" >&2
   exit 1
 fi
 if ! command -v _session_refresh0 >/dev/null 2>&1; then
