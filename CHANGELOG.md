@@ -6,10 +6,13 @@ All notable changes to vpn-switch are documented here. The format is based on
 
 ## [Unreleased] — towards 1.0.0
 
-- FreeBSD rc.d: `start` holds a lock directory (`/var/run/vpn_switch.lock`)
-  for its duration, so the devd `linkup` fired by the uplink's queued
-  LINK_UP at boot and rc's own `start` no longer bring the session up twice
-  (illyria 2026-09-18). The second caller prints one line and returns 0.
+- FreeBSD rc.d: the devd `linkup` does nothing until the boot's own `start`
+  has run (`/var/run/vpn_switch.started`): the uplink's LINK_UP is queued
+  before devd runs, so `linkup` used to start the session before pf and the
+  routes ("Firewall configuration failed") and `start` then ran it again
+  (illyria 2026-09-18). Two starts at once (a flapping uplink) are
+  serialized by the lock directory `/var/run/vpn_switch.lock`; the loser
+  prints one line and returns 0.
 
 The first public release. vpn-switch was developed privately from 2024 to 2026;
 rather than replay that history commit by commit, this entry summarises the
