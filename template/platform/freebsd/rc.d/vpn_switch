@@ -25,7 +25,10 @@
 #
 # The devd rule /usr/local/etc/devd/vpn_switch.conf calls 'linkup' when the
 # uplink reports LINK_UP (cable back, lagg failover) - a no-op while a session
-# is already connected.
+# is already connected. At boot the uplink's LINK_UP is queued before devd
+# runs, so 'linkup' and rc's own 'start' race for the same session: one
+# start at a time holds /var/run/vpn_switch.lock (a directory, mkdir is
+# atomic; /var/run is cleaned at boot), the other one leaves quietly.
 
 # shellcheck disable=SC2034  # rc.subr reads desc, rcvar and the *_cmd variables
 . /etc/rc.subr
@@ -43,6 +46,7 @@ load_rc_config $name
 : "${vpn_switch_wait:="30"}"
 : "${vpn_switch_session:=""}"
 : "${vpn_switch_command:="/usr/local/bin/vpn-switch"}"
+: "${vpn_switch_lock:="/var/run/vpn_switch.lock"}"
 
 extra_commands="status linkup"
 start_cmd="vpn_switch_start"
@@ -95,8 +99,15 @@ wait_for_uplink() {
 	return 1
 }
 
+# one start at a time: the second caller (rc start vs devd linkup at boot,
+# two LINK_UP events of a flapping uplink) sees the lock and leaves
 vpn_switch_start() {
 	vpn_switch_precheck || return 1
+	if ! mkdir "$vpn_switch_lock" 2>/dev/null; then
+		echo "$name: another start holds $vpn_switch_lock"
+		return 0
+	fi
+	trap 'rmdir "$vpn_switch_lock" 2>/dev/null' EXIT
 	if connected; then
 		echo "$name: session already connected"
 		return 0
