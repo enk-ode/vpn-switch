@@ -258,6 +258,6 @@ Protocols are added by convention, not configuration — dispatch is unchanged.
   and **OpenBSD** (both walked through below). Ports are added by the same
   recipe; promotion to Tier-1 means joining the automated matrix.
 
-See [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) for *why* the platform layer and
-phase backends are shaped this way, and [COMMAND_INSPECTION.md](COMMAND_INSPECTION.md)
-for inspecting what the generated scripts actually emit on your platform.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for how the platform layer and phase
+backends are shaped, and [COMMAND_INSPECTION.md](COMMAND_INSPECTION.md) for
+inspecting what the generated scripts actually emit on your platform.

@@ -297,8 +297,8 @@ manpage:
 	@sh scripts/generate-help-manpage.sh
 	@echo "Generating docs/vpn-switch.1 (groff man page)..."
 	@pandoc -s -t man docs/vpn-switch.1.md -o docs/vpn-switch.1
-	@echo "Generating docs/vpn-switch.html (web rendering)..."
-	@pandoc -s -t html5 --css=man.css docs/vpn-switch.1.md -o docs/vpn-switch.html
+	@echo "Generating docs/vpn-switch.html (web rendering: mandoc from the man page, the same look as the man page in a terminal)..."
+	@mandoc -T html -O style=man.css docs/vpn-switch.1 > docs/vpn-switch.html
 	@cp docs/vpn-switch.html docs/index.html   # GitHub Pages landing page (served from /docs)
 	@echo "  → docs/vpn-switch.1"
 	@echo "  → docs/vpn-switch.html"

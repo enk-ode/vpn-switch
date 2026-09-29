@@ -128,14 +128,14 @@ fresh install.
 
 Bring tunnels up and down, and keep the database in sync with the source.
 
-**stop**
-:   Stop every active VPN session (idempotent)
-
 **sync**
 :   Refresh the database from installed source templates
 
 **version**
 :   Report the database and source SHAs (drift means run 'sync')
+
+**stop**
+:   Stop every active VPN session (idempotent)
 
 **start [\<config\>]**
 :   Connect using a config; with no argument, resume the default session or pick at random
@@ -230,15 +230,6 @@ Manage configurations, groups and tunnels for both **wireguard** and **openvpn**
 
 Back up, restore and refresh the database itself.
 
-**phases sync [\<phase\>]**
-:   Refresh phase scripts (firewall, vpn, dns) from source templates
-
-**env sync**
-:   Refresh environment defaults in .env/default/ from source templates
-
-**version sync**
-:   Stamp the database's .version with the source's current SHA
-
 **dump**
 :   Export the database as an executable shell script
 
@@ -247,6 +238,15 @@ Back up, restore and refresh the database itself.
 
 **restore \<file\>**
 :   Restore the database from a previously-generated dump file
+
+**env sync**
+:   Refresh environment defaults in .env/default/ from source templates
+
+**version sync**
+:   Stamp the database's .version with the source's current SHA
+
+**phases sync [\<phase\>]**
+:   Refresh phase scripts (firewall, vpn, dns) from source templates
 
 ## Configuration
 

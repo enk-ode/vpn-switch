@@ -1,7 +1,7 @@
 # vpn-switch Requirements
 
-Technical requirements for `vpn-switch`. For architecture and rationale, see
-[ARCHITECTURE.md](ARCHITECTURE.md) and [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md).
+Technical requirements for `vpn-switch`. For the architecture, see
+[ARCHITECTURE.md](ARCHITECTURE.md).
 For current status, see [CLAUDE.md](CLAUDE.md).
 
 ## Table of Contents
@@ -529,6 +529,5 @@ Per-function overrides use `VPN_SWITCH_INTERPRETER_<name>` (e.g.
 ## References
 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — combinator architecture and dispatch
-- [DESIGN_DECISIONS.md](DESIGN_DECISIONS.md) — key decisions and rationale
 - [CLAUDE.md](CLAUDE.md) — current status and project instructions
 - [COMMIT_CHECKLIST.md](COMMIT_CHECKLIST.md) — definition of done

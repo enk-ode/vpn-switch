@@ -1,0 +1,6 @@
+# publish-sync.sh: one extended regex per line; a content line matching one is not a sweep hit.
+# The VPN provider's documented gateway and DNS addresses (WireGuard 10.2.0.0/8, OpenVPN 10.96.0.0/16):
+# public knowledge from the provider's own docs, not this machine's network.
+(^|[^0-9.])10\.(2|96)\.0\.[0-9]+
+# test fixtures in the three suites (the sweep hit reads main:<file>:<line>:<text>): documentation addresses, not a network of ours
+^main:vpn-switch-(unit|integration|architecture)-test\.sh:[0-9]+:.*10\.[0-9]+\.[0-9]+\.[0-9]+

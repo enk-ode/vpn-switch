@@ -1,0 +1,23 @@
+# vpn-switch — run-all-tests (openbsd) — 2026-06-25
+
+Test Results Summary - Thu Jun 25 16:39:17 CEST 2026
+================================================================================
+
+Status | Platform | Test Suite                          | Profile | Tests | Assert | Passed | Failed
+-------|----------|-------------------------------------|---------|-------|--------|--------|-------
+FAIL   | OpenBSD  | vpn-switch-unit-test.sh             | minimal |   156 |    393 |    331 |     62
+FAIL   | OpenBSD  | vpn-switch-unit-test.sh             | all     |     0 |      0 |      0 |      0
+FAIL   | OpenBSD  | vpn-switch-ownership-test.sh        | minimal |     2 |     10 |      4 |      6
+FAIL   | OpenBSD  | vpn-switch-ownership-test.sh        | all     |     2 |     10 |      4 |      6
+FAIL   | OpenBSD  | vpn-switch-integration-test.sh      | minimal |     0 |      0 |      0 |      0
+FAIL   | OpenBSD  | vpn-switch-integration-test.sh      | all     |     0 |      0 |      0 |      0
+FAIL   | OpenBSD  | vpn-switch-architecture-test.sh     | minimal |     0 |      0 |      0 |      0
+FAIL   | OpenBSD  | vpn-switch-architecture-test.sh     | all     |     0 |      0 |      0 |      0
+================================================================================
+
+SOME TESTS FAILED
+
+Total: 160 tests, 413 assertions (339 passed, 74 failed)
+
+Detailed logs saved to: /tmp/vpn-switch-test-results-20260625-062801
+

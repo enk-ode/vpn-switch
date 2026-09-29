@@ -79,7 +79,6 @@ vpn-switch session switch home                              # or: stop + resume 
 
 **Understand the design:**
 - [ARCHITECTURE.md](docs/ARCHITECTURE.md) — Combinator pattern, dispatch, interpreters
-- [DESIGN_DECISIONS.md](docs/DESIGN_DECISIONS.md) — Why this works the way it does
 - [REQUIREMENTS.md](docs/REQUIREMENTS.md) — Technical requirements & constraints
 
 **Debug & contribute:**
