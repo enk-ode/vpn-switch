@@ -327,8 +327,10 @@ $VPN_SWITCH_BASE/
     └── latest-wg0    → ../.session/45123   # system-managed (interface owner)
 ```
 
-Named symlinks (including `default`) are exported by `vpn-switch dump`;
-`latest` is skipped, since it is transient state recreated on the next start.
+Saved sessions (including `default`) travel in `vpn-switch dump` as the two
+commands you used to create them, `start` and `session save`, with the
+connect step bound to `cat` around them (see TUTORIAL_MIGRATION.md, Step 4);
+`latest` and `latest-<iface>` are transient and are not part of the dump.
 
 ## Advanced: session state via `inspect`
 

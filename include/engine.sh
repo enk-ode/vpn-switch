@@ -93,26 +93,21 @@ EOF
 # resolution strategy simple: comments DON'T block defaults (less surprising).
 #
 should_skip_env_value() {
-  local value="$1"
+  local value="$1" trimmed
+  case "$value" in '') return 0 ;; esac
+  case "$value" in *[![:space:]]*) ;; *) return 0 ;; esac
+  trimmed=${value#"${value%%[![:space:]]*}"}
+  case "$trimmed" in \#*) return 0 ;; esac
+  return 1
+}
 
-  # Empty line - skip
-  case "$value" in
-    '') return 0 ;;
-  esac
-
-  # Whitespace-only line - skip
-  case "$value" in
-    *[![:space:]]*) ;;  # Has non-whitespace - continue checking
-    *) return 0 ;;      # Only whitespace - skip
-  esac
-
-  # Comment line (with optional leading whitespace) - skip
-  local trimmed=$(echo "$value" | sed 's/^[[:space:]]*//')
-  case "$trimmed" in
-    \#*) return 0 ;;    # Comment - skip
-  esac
-
-  return 1  # Use this value
+# platform_name -- the platform the loaded platform file names: freebsd, linux,
+# alpine, openbsd (the default symlink resolved, or VPN_SWITCH_PLATFORM)
+platform_name() {
+  local f="$PLATFORM_FILE"
+  [ ! -L "$f" ] || f=$(readlink "$f")
+  f=${f##*/}
+  printf '%s\n' "${f%.sh}"
 }
 
 # build_env_args - Build environment variable arguments for env command
@@ -135,81 +130,37 @@ should_skip_env_value() {
 # Output: Space-separated VAR='value' pairs (single-quoted for safety with eval)
 #
 build_env_args_full() {
-  # Full environment scan (excludes cache file to avoid recursion)
-  # Called by build_env_args() when cache is not available
-  # Called by "environment cache on" to generate cache content
-
-  # Return in-memory cached value if available (passed through env -)
   if [ -n "${VPN_SWITCH_CACHE_ENV_ARGS:-}" ]; then
-    echo "$VPN_SWITCH_CACHE_ENV_ARGS"
+    printf '%s\n' "$VPN_SWITCH_CACHE_ENV_ARGS"
     return 0
   fi
-
-  local env_base="$VPN_SWITCH_ENV_DIR"
-  local env_args=""
-  local seen_vars=""
-
-  # First pass: Load local overrides (highest priority)
+  local env_base="$VPN_SWITCH_ENV_DIR" env_args="" seen_vars="" varfile varname value Q
   if [ -d "$env_base/local" ]; then
     for varfile in "$env_base/local"/*; do
-      [ ! -f "$varfile" ] && continue
-
-      local varname=$(basename "$varfile")
-
-      # CRITICAL: Skip cache file to avoid recursion
-      if [ "$varname" = "VPN_SWITCH_CACHE_ENV_ARGS" ]; then
-        continue
-      fi
-
-      local value=$(head -n1 "$varfile")
-
-      # Use helper to check if should skip
-      if should_skip_env_value "$value"; then
-        # DON'T mark as seen - allow default to load (less surprising)
-        continue
-      fi
-
-      # Mark as seen ONLY when we actually use the value
+      [ -f "$varfile" ] || continue
+      varname=${varfile##*/}
+      [ "$varname" != "VPN_SWITCH_CACHE_ENV_ARGS" ] || continue
+      IFS= read -r value < "$varfile" || value=""
+      should_skip_env_value "$value" && continue
       seen_vars="$seen_vars $varname "
-
-      # Escape single quotes for shell eval: ' becomes '\''
-      local escaped_value=$(printf '%s\n' "$value" | sed "s/'/'\\\\''/g")
-      env_args="$env_args $varname='$escaped_value'"
+      q "$value"; env_args="$env_args $varname=$Q"
     done
   fi
-
-  # Second pass: Load defaults (only if not already set by local)
   if [ -d "$env_base/default" ]; then
     for varfile in "$env_base/default"/*; do
-      [ ! -f "$varfile" ] && continue
-
-      local varname=$(basename "$varfile")
-
-      # Skip VPN_SWITCH_BASE - it's passed explicitly in run_env()
+      [ -f "$varfile" ] || continue
+      varname=${varfile##*/}
       if [ "$varname" = "VPN_SWITCH_BASE" ]; then
         display_warning "VPN_SWITCH_BASE found in .env files but will be ignored (must be set via environment)" >&2
         continue
       fi
-
-      # Skip if already loaded from local
-      case "$seen_vars" in
-        *" $varname "*) continue ;;
-      esac
-
-      local value=$(head -n1 "$varfile")
-
-      # Use helper to check if should skip
-      if should_skip_env_value "$value"; then
-        continue
-      fi
-
-      # Escape single quotes for shell eval: ' becomes '\''
-      local escaped_value=$(printf '%s\n' "$value" | sed "s/'/'\\\\''/g")
-      env_args="$env_args $varname='$escaped_value'"
+      case "$seen_vars" in *" $varname "*) continue ;; esac
+      IFS= read -r value < "$varfile" || value=""
+      should_skip_env_value "$value" && continue
+      q "$value"; env_args="$env_args $varname=$Q"
     done
   fi
-
-  echo "$env_args"
+  printf '%s\n' "$env_args"
 }
 
 build_env_args() {
@@ -262,13 +213,8 @@ run_env() {
 
   # Build or reuse cached environment variable arguments (performance optimization)
   local env_args
-  if [ -n "${VPN_SWITCH_CACHE_ENV_ARGS:-}" ]; then
-    env_args="$VPN_SWITCH_CACHE_ENV_ARGS"
-  else
-    env_args=$(build_env_args)
-    # Cache for child processes by passing through env - boundary
-    VPN_SWITCH_CACHE_ENV_ARGS="$env_args"
-  fi
+  env_args=$(build_env_args_full)
+  eval "export $env_args"
 
   local script_path="$VPN_SWITCH_CONTEXT_SCRIPT"
 
@@ -330,6 +276,10 @@ run_env() {
     passthrough="$passthrough VPN_SWITCH_DISPLAY_ANSI=\"\$VPN_SWITCH_DISPLAY_ANSI\""
   fi
 
+  if [ -n "${TERM:-}" ]; then
+    passthrough="$passthrough TERM=\"\$TERM\""	# pinentry of the owner's attest
+  fi
+
   # Get current depth for logging (default to 0)
   local current_depth="${VPN_SWITCH_TRACE_DEPTH:-0}"
   # Calculate next depth for subprocess
@@ -344,6 +294,17 @@ run_env() {
   local runtime_vars=""
   if [ -n "${VPN_SWITCH_BATCH_KEEP_GOING:-}" ]; then
     runtime_vars="$runtime_vars VPN_SWITCH_BATCH_KEEP_GOING=\"$VPN_SWITCH_BATCH_KEEP_GOING\""
+  fi
+  if [ -n "${VPN_SWITCH_ARCHIVE_BASE:-}" ]; then
+    # restore replay binds where a dump's base elements come from (an
+    # extracted bundle); the replayed lines expand "$VPN_SWITCH_ARCHIVE_BASE"
+    runtime_vars="$runtime_vars VPN_SWITCH_ARCHIVE_BASE=\"$VPN_SWITCH_ARCHIVE_BASE\""
+  fi
+  if [ -n "${VPN_SWITCH_ROOT:-}" ]; then
+    # the root above the database, as the invoking process holds it (set or
+    # derived from VPN_SWITCH_BASE): import unpacks under <root>/incoming/,
+    # and the lines of its batch must see the same root, not re-derive one
+    runtime_vars="$runtime_vars VPN_SWITCH_ROOT=\"$VPN_SWITCH_ROOT\""
   fi
 
   # PATH for the isolated command environment. The "$PATH" below is only a
@@ -426,6 +387,29 @@ to_function_call() {
         ;;
     esac
   done
+
+  # === STEP 1b: the LONGEST name wins -- when functions exist under the
+  # concatenated prefix (curr_next), resolve there first; the arity match of
+  # the shorter name (STEP 2) is the fallback. So 'filter full a b' binds
+  # filter_full/2 even though filter/3 exists, and 'bundle readable x' binds
+  # bundle_readable/1 beside bundle/2 (the rule elebake's resolver follows).
+  if [ -n "$next" ]; then
+    local filtered_longer="" longer_call=""
+    for line in $filtered; do
+      case "$line" in
+        _${curr}_*|__${curr}_*|___${curr}_*)
+          filtered_longer="$filtered_longer $line"
+          ;;
+      esac
+    done
+    if [ -n "$filtered_longer" ]; then
+      longer_call=$(to_function_call "$filtered_longer" "${curr}_${next}" "$@")
+      if [ "$longer_call" != "usage" ]; then
+        printf '%s\n' "$longer_call"
+        return 0
+      fi
+    fi
+  fi
 
   # === STEP 2: Search in filtered set for exact matches ===
   # Arity was calculated above (total argument count after shifting curr)
@@ -605,54 +589,36 @@ dispatch() {
 # Phase 3.1.2: Intrinsic classification via naming convention
 #
 lookup_interpreter() {
-  # Read resolved function call from stdin
   local function_call
   read -r function_call
-
-  # Extract function name (first word)
   local function_name="${function_call%% *}"
-
-  # Try arity-specific override first (most specific)
-  # Example: VPN_SWITCH_INTERPRETER_wireguard_stop0
   local mangled_with_arity=$(echo "$function_name" | sed 's/^_*//')
-  local interp_var_arity="VPN_SWITCH_INTERPRETER_${mangled_with_arity}"
-  local override_arity=$(eval echo "\${${interp_var_arity}:-}")
-
-  if [ -n "$override_arity" ]; then
-    echo "$override_arity"
-    return 0
-  fi
-
-  # Try arity-agnostic override (less specific)
-  # Example: VPN_SWITCH_INTERPRETER_wireguard_stop
   local mangled=$(echo "$function_name" | sed 's/^_*//; s/[0-9]$//')
-  local interp_var="VPN_SWITCH_INTERPRETER_${mangled}"
-  local override=$(eval echo "\${${interp_var}:-}")
-
-  if [ -n "$override" ]; then
-    echo "$override"
-    return 0
-  fi
-
-  # Use defaults based on underscore count (intrinsic classification)
-  case "$function_name" in
-    ___*)
-      # Triple underscore = batch-combinator function (outputs multiple commands)
-      echo "$VPN_SWITCH_BATCH_COMBINATOR_INTERPRETER"
-      ;;
-    __*)
-      # Double underscore = combinator function (outputs single command)
-      echo "$VPN_SWITCH_COMBINATOR_INTERPRETER"
-      ;;
-    _*)
-      # Single underscore = terminal function (outputs shell commands)
-      echo "$VPN_SWITCH_TERMINAL_INTERPRETER"
-      ;;
-    *)
-      # No underscore prefix (shouldn't happen with proper naming)
-      error "Function name without underscore prefix: $function_name (check function naming convention)"
-      ;;
-  esac
+  local env_args
+  env_args=$( [ ! -f "$VPN_SWITCH_BASE/.version" ] || unset VPN_SWITCH_CACHE_ENV_ARGS; build_env_args )
+  (
+    eval "$env_args"
+    eval "override=\${VPN_SWITCH_INTERPRETER_${mangled_with_arity}:-}"
+    [ -n "$override" ] || eval "override=\${VPN_SWITCH_INTERPRETER_${mangled}:-}"
+    if [ -n "$override" ]; then
+      printf '%s\n' "$override"
+      exit 0
+    fi
+    case "$function_name" in
+      ___*)
+        printf '%s\n' "$VPN_SWITCH_BATCH_COMBINATOR_INTERPRETER"
+        ;;
+      __*)
+        printf '%s\n' "$VPN_SWITCH_COMBINATOR_INTERPRETER"
+        ;;
+      _*)
+        printf '%s\n' "$VPN_SWITCH_TERMINAL_INTERPRETER"
+        ;;
+      *)
+        error "Function name without underscore prefix: $function_name (check function naming convention)"
+        ;;
+    esac
+  )
 }
 
 
@@ -841,6 +807,71 @@ follow_symlinks_safe() {
 # Security check to prevent path injection attacks via embedded newlines.
 # Used by both wireguard and openvpn modules during config patching.
 #
+# ---------------------------------------------------------------------------
+# Helpers the export/import pair needs (ported from elebake): a note a
+# generated script prints at run time, a database path rebased for a dump,
+# the extra files of a key record as import lines, the record-name and
+# key-id predicates (silent: yes or no), and the hash of a file on a
+# platform without sha256(1).
+# ---------------------------------------------------------------------------
+emit_note() {
+  local t
+  t=$(sq "$*"); t=${t#\'}; t=${t%\'}
+  printf '%s\n' "printf '%s\\n' '# $t' >&2"
+}
+rebase_db_path() {
+  local v="$1" rv rb
+  rv=$(readlink -f "$v" 2>/dev/null) || rv="$v"
+  rb=$(readlink -f "$VPN_SWITCH_BASE" 2>/dev/null) || rb="$VPN_SWITCH_BASE"
+  case "$rv" in
+    "$rb"/*) printf '"%s"\n' "\$VPN_SWITCH_BASE/${rv#"$rb"/}" ;;
+    *)       printf "'%s'\n" "$v" ;;
+  esac
+}
+backend_dump_extra_lines() {
+  local backend="$1" name="$2" base="$VPN_SWITCH_BASE" f b
+  shift 2
+  for f in "$base/$backend/$name"/*; do
+    { [ -f "$f" ] || [ -L "$f" ]; } || continue
+    b=$(basename "$f")
+    case " $* " in *" $b "*) continue ;; esac
+    printf '%s\n' "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" $backend import '$name' \"\$VPN_SWITCH_ARCHIVE_BASE/${f#"$base/"}\""
+  done
+  return 0
+}
+record_name_ok() {
+  test -n "$1" && test "$1" != . && test "$1" != .. && printf '%s\n' "$1" | grep -qx '[A-Za-z0-9_.-]*'
+}
+key_name_ok() { record_name_ok "$1"; }
+keyid_ok() {
+  printf '%s\n' "$1" | grep -qxE '[0-9A-Fa-f]{8}|[0-9A-Fa-f]{16}|[0-9A-Fa-f]{40}'
+}
+sha256_q() {
+  sha256sum "$1" | cut -d' ' -f1
+}
+
+#@help _comment1
+# @command comment <text>
+# @summary Text terminal: a comment line ('# <text>') -- the positive answer of a check in a batch; nothing runs
+# @group   setup
+# @internal
+#@end
+_comment1() {
+  printf '# %s\n' "$1"
+}
+
+#@help _note1
+# @command note <text>
+# @summary Act terminal: a note the generated script prints to stderr when it runs
+# @group   setup
+# @internal
+#@end
+_note1() {
+  local t
+  t=$(sq "$1"); t=${t#\'}; t=${t%\'}
+  printf '%s\n' "printf '# %s\\n' '$t' >&2"
+}
+
 has_newline_in_path() {
   local path="$1"
   # wc -l counts newlines - if > 0, the path contains embedded newlines
@@ -1630,10 +1661,14 @@ ${c_heading}Config Management:${c_reset}
 ${c_heading}Database Management:${c_reset}
   ${c_cmd}vpn-switch bootstrap <basedir> <profile>${c_reset} Bootstrap new database
   ${c_cmd}vpn-switch dump [> file]${c_reset}                Dump database to stdout/file
-  ${c_cmd}vpn-switch restore <file>${c_reset}               Restore from dump file
+  ${c_cmd}vpn-switch export <strategy> <dump> <bundle>${c_reset} The signed pair that moves the database (redacted|full|minimized)
+  ${c_cmd}vpn-switch import <dump> <bundle>${c_reset}       Verify the pair, file the receipt, replay
+  ${c_cmd}vpn-switch restore <dump>${c_reset}               Replay a signed dump whose files are here
+  ${c_cmd}vpn-switch openpgp add <name> <keyid>${c_reset}   Register the attest key (pin: VPN_SWITCH_ARCHIVE_ATTEST_KEY)
+  ${c_cmd}vpn-switch provenance list${c_reset}              The export serial and the receipts
   ${c_cmd}vpn-switch batch <file>${c_reset}                 Execute commands from file
 
-  ${c_gray}Note: Dump creates portable backups, restore requires original config files${c_reset}
+  ${c_gray}Note: a dump names its files; the bundle carries them. Only a dump signed by the pinned key replays${c_reset}
 
 ${c_heading}Environment Management:${c_reset}
   ${c_cmd}vpn-switch setenv <var> <value>${c_reset}        Set environment variable
@@ -1646,8 +1681,8 @@ ${c_heading}Examples:${c_reset}
   ${c_cmd}vpn-switch wireguard start privacy${c_reset}      ${c_gray}# Start VPN from privacy category${c_reset}
   ${c_cmd}vpn-switch session save work${c_reset}            ${c_gray}# Save current session as 'work'${c_reset}
   ${c_cmd}vpn-switch session start work${c_reset}           ${c_gray}# Resume 'work' session${c_reset}
-  ${c_cmd}vpn-switch dump > backup.sh${c_reset}             ${c_gray}# Backup database to file${c_reset}
-  ${c_cmd}vpn-switch restore backup.sh${c_reset}            ${c_gray}# Restore database from file${c_reset}
+  ${c_cmd}vpn-switch export full ~/b/vs.sh ~/b/vs.tar.gz${c_reset} ${c_gray}# The signed pair: dump + bundle${c_reset}
+  ${c_cmd}vpn-switch import ~/b/vs.sh ~/b/vs.tar.gz${c_reset} ${c_gray}# Into a fresh database, the key pinned${c_reset}
   ${c_cmd}vpn-switch setenv VPN_SWITCH_DISPLAY_ANSI 1${c_reset}  ${c_gray}# Enable colored output${c_reset}
   ${c_cmd}vpn-switch getenv VPN_SWITCH_BASE${c_reset}       ${c_gray}# Show base directory${c_reset}
   ${c_cmd}vpn-switch wireguard validate${c_reset}           ${c_gray}# Check for broken links${c_reset}
@@ -1891,6 +1926,11 @@ main() {
         # and even when the user flipped the terminal interpreter to sh.
         if [ "${1:-}" = "complete" ]; then
           ensure_interpreter_var "VPN_SWITCH_INTERPRETER_complete"
+        fi
+        # import before any database: its batch (import bootstrap) runs under
+        # the pin the template ships (sh -e) -- no .env layer to read it from.
+        if [ "${1:-}" = "import" ]; then
+          ensure_interpreter_var "VPN_SWITCH_INTERPRETER_import_bootstrap"
         fi
         eval "export $env_args"
 

@@ -87,12 +87,6 @@ env() {
         eval "${pre# }$cmd"
 }
 
-# env_reload -- after an act that wrote the environment: the later calls of
-# this process see it (a child process would have read it at its start).
-env_reload() {
-        eval "export $(build_env_args)"
-}
-
 only_comments() {
         local line
         while IFS= read -r line || [ -n "$line" ]; do
@@ -174,9 +168,6 @@ process_arguments() {
                 fi ;;
         esac
         ELV_DEPTH=$((ELV_DEPTH - 1))
-        case "$name" in
-        _setenv2|_unsetenv1|_environment_cache1|_env_sync0|_environment_init1) [ "$ELV_MODE" = run ] && env_reload ;;
-        esac
         VPN_SWITCH_CONTEXT_CALL=$call
         combine_exit_codes "$bits" "$pe" "$ce"
 }

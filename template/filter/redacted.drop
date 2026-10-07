@@ -1,0 +1,9 @@
+# filter redacted: the credentials stay home. A VPN configuration IS the
+# secret (private key, preshared key, user/password), so the configurations
+# are dropped as a whole; the description (categories, links, sessions, the
+# key record, the receipts) travels complete.
+# <glob> <reason>
+*/wireguard/*.conf secret
+*/openvpn/*.ovpn secret
+*/.tmp/* operational
+*/.log/* operational

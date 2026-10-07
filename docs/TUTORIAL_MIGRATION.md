@@ -1,5 +1,58 @@
 # vpn-switch - Migration & Backup Tutorial
 
+## The short way: the signed pair (export / import)
+
+Since the export/import pair exists, moving a database is two commands and
+one decision. The decision is the attest key: an OpenPGP key that signs
+what this database exports, registered as an `openpgp` record and pinned
+in the environment. On the receiving side the SAME setting names the
+record whose fingerprint an incoming dump must carry.
+
+```sh
+# the sender: register the key once, pin it, export
+$ vpn-switch openpgp add attest 4E1F0A2B7C9D8E6F5A4B3C2D1E0F9A8B7C6D5E4F ~/.gnupg
+$ vpn-switch setenv VPN_SWITCH_ARCHIVE_ATTEST_KEY attest
+$ vpn-switch export full ~/backup/vpn-switch.sh ~/backup/vpn-switch.tar.gz
+# ... attested MANIFEST, bundled 5 entries, seal, attested dump, serial 0 -> 1
+
+# the receiver: a fresh database, the sender's key pinned, import
+$ vpn-switch bootstrap ~/.vpn-switch/db minimal
+$ vpn-switch openpgp add attest 4E1F0A2B7C9D8E6F5A4B3C2D1E0F9A8B7C6D5E4F
+$ vpn-switch setenv VPN_SWITCH_ARCHIVE_ATTEST_KEY attest
+$ vpn-switch import ~/backup/vpn-switch.sh ~/backup/vpn-switch.tar.gz
+$ vpn-switch provenance list
+# export serial: 1
+# receipts (serial  restored  signer  dump  bundle  into  by)
+#        1  2026-10-01T08:21:44Z  59B0A087EE180A91  edf61e96dde0  2ab1eb4261e3  db  user@host
+```
+
+The strategy comes first: `full` carries everything (your own machines), `redacted` leaves the configurations -- the credentials -- at home and ships the description (a bug report, a skeleton for a second machine), `minimized` carries the configurations and the key without the receipts (a rescue medium). What `export` writes: the **dump** (the database as a script of its own
+commands, its import lines naming files against `"$VPN_SWITCH_ARCHIVE_BASE"`)
+and the **bundle** (a tar of the files the dump names: `wireguard/*.conf`,
+`openvpn/*.ovpn`, the openpgp records, the receipts), with an attested
+`MANIFEST` inside. The dump's last line is the **seal** (`# Bundle:
+sha256=... bytes=...`) binding it to that bundle; the signature `<dump>.asc`
+covers dump and seal. What `import` checks before anything lands: the
+pinned signer of the dump, the seal against the bundle it was given, the
+MANIFEST against the extracted tree (every hash), and the serial against
+the signer's last receipt (a downgrade is refused). Then it files the
+receipt and replays the dump with the bundle as its base: no path
+rewriting, no staging directory, the categories and links recreated by
+the dump as before.
+
+`restore <dump>` alone takes the same path (signer, serial) and binds the
+base elements to the database itself: it serves a dump whose files are
+already in place, never a dump from elsewhere. A dump without the
+signature of the pinned key is refused since format 1 (`# Version: 1` in
+the header); older dumps (no version header) must be exported again with
+this vpn-switch.
+
+The sections below describe the dump itself and the manual migration path
+that predates the pair; they remain valid for reading a dump, and
+superseded for moving one.
+
+---
+
 This tutorial covers `vpn-switch dump` / `vpn-switch restore` for backing
 up a database and migrating between hosts. Every command was verified
 against debian-host (Debian 12) and freebsd-host (FreeBSD 15.0) on 2026-05-21.
@@ -18,8 +71,9 @@ script that, when fed back through `vpn-switch restore`, recreates:
   subset in the prologue, the full set in the epilogue)
 - `wireguard import` and `openvpn import` calls for every config
 - Category and link structure for both protocols (`add` / `link` calls)
-- Named-session metadata (`session create`/`populate`, `patch`,
-  `configure`, `session save`)
+- Every saved session, as you create one yourself: `<protocol> start
+  <config>` then `session save <name>`, inside a guard that binds the
+  connect step to `cat` (the session is built, nothing connects)
 
 What `dump` does **not** capture:
 
@@ -62,9 +116,9 @@ The structure is:
    process itself needs (interface, terminal interpreter, phases).
 3. **Protocol body** — one block per protocol (openvpn, wireguard) with
    `import`/`link`/`add` calls.
-4. **Session block** — `session create`/`populate`/`save` calls for
-   every named session. **Note:** sessions don't round-trip through a
-   dump; see [Step 4](#step-4-sessions-dont-round-trip--recreate-them).
+4. **Session block** — `start` and `session save` for every saved
+   session, the connect terminals pinned to `cat` around them; see
+   [Step 4](#step-4-sessions-in-the-dump).
 5. **Epilogue** — `setenv` calls for the rest of `.env/local/`.
 
 ---
@@ -86,15 +140,8 @@ $ VPN_SWITCH_BASE=~/.vpn-switch/db-restored vpn-switch restore ~/backup-2026-05-
 `restore` reads the dump and executes it through the batch interpreter.
 Both setenv and wireguard import calls run against the new DB.
 
-**Recommended:** strip the session-dump block before restoring, since
-sessions don't round-trip — see
-[Step 4](#step-4-sessions-dont-round-trip--recreate-them):
-
-```console
-$ sed -e '/^# Session dump/,/^# Epilogue/d' \
-      ~/backup-2026-05-21.sh > ~/backup-no-sessions.sh
-$ VPN_SWITCH_BASE=~/.vpn-switch/db-restored vpn-switch restore ~/backup-no-sessions.sh
-```
+The saved sessions come back with the rest (Step 4): the restore builds
+each one as `start` would, without connecting.
 
 (The `sed` deletes the lines from the `# Session dump` header through the
 `# Epilogue` header inclusive. The prologue and protocol body are untouched,
@@ -242,36 +289,35 @@ machines have identical paths.
 
 ---
 
-## Step 4: Sessions Don't Round-Trip — Recreate Them
+## Step 4: Sessions in the Dump
 
-For each named session, the `# Session dump` block emits these commands
-(one set per session, using a literal `"$$"` PID placeholder):
+A saved session is described the way you create one (see
+[TUTORIAL_SESSIONS.md](TUTORIAL_SESSIONS.md)): start the protocol with a
+configuration, then save the session under a name. The dump says exactly
+that, nothing of the session's inner form (no PID, no directory, no link):
 
 ```
-"$VPN_SWITCH_CONTEXT_SCRIPT" session create "$$"
-"$VPN_SWITCH_CONTEXT_SCRIPT" session populate "$$" "wireguard" "<interface>"
-"$VPN_SWITCH_CONTEXT_SCRIPT" wireguard patch "$$" "<original-config-path>"
-"$VPN_SWITCH_CONTEXT_SCRIPT" wireguard configure "$$"
-"$VPN_SWITCH_CONTEXT_SCRIPT" session save <session-name>
+# Saved sessions: start + save, the connect step bound to cat (a session is built, no connection is made)
+"$VPN_SWITCH_CONTEXT_SCRIPT" setenv VPN_SWITCH_INTERPRETER_wireguard_connect1 cat
+"$VPN_SWITCH_CONTEXT_SCRIPT" setenv VPN_SWITCH_INTERPRETER_openvpn_connect1 cat
+"$VPN_SWITCH_CONTEXT_SCRIPT" environment refresh
+"$VPN_SWITCH_CONTEXT_SCRIPT" wireguard start wg-CH-12.conf
+"$VPN_SWITCH_CONTEXT_SCRIPT" session save work
+"$VPN_SWITCH_CONTEXT_SCRIPT" openvpn start us-office.ovpn
+"$VPN_SWITCH_CONTEXT_SCRIPT" session save office
+"$VPN_SWITCH_CONTEXT_SCRIPT" unsetenv VPN_SWITCH_INTERPRETER_wireguard_connect1
+"$VPN_SWITCH_CONTEXT_SCRIPT" unsetenv VPN_SWITCH_INTERPRETER_openvpn_connect1
+"$VPN_SWITCH_CONTEXT_SCRIPT" environment refresh
 ```
 
-A session is tied to a live process: `session create "$$"` keys the
-session directory off the PID of the restoring shell, and the original
-config path it records (`wireguard patch`) is the absolute path from the
-*source* database, which won't exist on a different host. A named session
-is therefore derived state — easiest to recreate on the target rather
-than replay through the dump.
-
-**Recommended:** strip the session block before restoring (shown in Steps
-2 and 3), then recreate the sessions you need by starting and saving them:
-
-```console
-$ VPN_SWITCH_BASE=~/.vpn-switch/db-restored vpn-switch wireguard start wg-CH-12
-...
-$ VPN_SWITCH_BASE=~/.vpn-switch/db-restored vpn-switch session save work
-# Saving session 12345 as 'work'
-# Session saved: work -> 12345
-```
+`start` would connect; the guard around the block binds the connect
+terminals to `cat`, so the replay builds each session with its scripts
+(the connect script is rendered for the target's environment, which is
+what you want on another host) and connects nothing. The epilogue restores
+your own pins afterwards. A session saved under two names is one `start`
+and two `save` lines. Whether a session was running when you dumped is not
+part of the database and is not replayed; after the import every session
+is stopped, `session start <name>` resumes it.
 
 ---
 
@@ -298,12 +344,12 @@ fails on duplicate. Solutions:
 - Use a fresh `bootstrap`'d destination DB (don't pre-populate).
 - Use Approach A above with a staging dir *outside* the DB.
 
-### Restore reports failures but keeps going
+### Restore stops at the first failure
 
-Restore runs the batch in keep-going mode (`VPN_SWITCH_BATCH_KEEP_GOING=1`,
-set by `restore`), so a failed command is logged and the rest still run;
-the overall command then exits with a batch code ≥ 128. Scan the output for
-`# Error:` lines to find which steps failed. The usual culprit is a config
+Restore runs the batch fail-fast (`VPN_SWITCH_BATCH_KEEP_GOING=0`, set by
+`restore`): the first failing command stops the replay, the lines before it
+have acted, and the command exits non-zero. Scan the output for the
+`# Error:` line to find the step that failed. The usual culprit is a config
 path that doesn't exist on the target host; re-run the path-rewrite `sed`
 from Step 3.
 

@@ -476,9 +476,9 @@ combinator interpreter writes its piped stdin to a `0600` temp file under
 `.tmp/` and invokes `vpn-switch batch <tmpfile>`, which is how
 `clean | …` and `dump | …` pipelines run.
 
-`restore` is a thin wrapper: it validates the file is present and readable,
-sets `VPN_SWITCH_BATCH_KEEP_GOING=1`, and runs batch
-(`include/database.sh:992+`).
+`restore` checks the dump (signed by the pinned attest key, the serial
+admissible) and replays it as batch with `VPN_SWITCH_BATCH_KEEP_GOING=0`
+in front: the replay stops at the first failing line (`include/archive.sh`).
 
 ```bash
 vpn-switch dump > backup.sh

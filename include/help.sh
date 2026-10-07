@@ -49,7 +49,15 @@
 #@help
 # @defgroup database  Database lifecycle
 # @order   60
-#   Back up, restore and refresh the database itself.
+#   Back up, restore and refresh the database itself; export and import the
+#   signed pair (dump + bundle) that moves it to another machine.
+#@end
+
+#@help
+# @defgroup keys  Keys
+# @order   65
+#   The attest key: an openpgp record names the GnuPG key that signs what
+#   this database exports and the signer a receiver expects (pinned).
 #@end
 
 #@help
@@ -90,6 +98,28 @@
 # @defcompletion subcommand command-path
 # @defcompletion words      none
 # @defcompletion name       session
+# @defcompletion dump       files
+# @defcompletion bundle     files
+# @defcompletion base       files
+# @defcompletion collection files
+# @defcompletion filtered   files
+# @defcompletion manifest   files
+# @defcompletion archive    files
+# @defcompletion destination files
+# @defcompletion directory  files
+# @defcompletion absfile    files
+# @defcompletion gnupghome  files
+# @defcompletion key        none
+# @defcompletion keyid      none
+# @defcompletion backend    none
+# @defcompletion id         none
+# @defcompletion strategy   none
+# @defcompletion serial     none
+# @defcompletion current    none
+# @defcompletion fpr        none
+# @defcompletion floor      none
+# @defcompletion cur        none
+# @defcompletion text       none
 # @defcompletion PID        pid
 # @defcompletion from       session
 # @defcompletion location   layer
@@ -155,7 +185,7 @@ help_render() {
     # tokens: split a usage line into argument tokens, brackets stripped:
     # "session show [<name>|<PID>]" -> session, show, <name>|<PID>
     function tokens(u, t,   n, i, x, k){ n=split(u, raw, " "); k=0
-      for(i=1;i<=n;i++){ x=raw[i]; gsub(/[\[\]]/,"",x); if(x!="") t[++k]=x } return k }
+      for(i=1;i<=n;i++){ x=raw[i]; gsub(/[][]/,"",x); if(x!="") t[++k]=x } return k }
     # isph: is <nm> a placeholder of command p? The table decides - a name
     # with a @completion/@defcompletion source is a placeholder, anything
     # else written in <...> is a literal alternative (<a|b>, <stage>|all).

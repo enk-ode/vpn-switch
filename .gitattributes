@@ -1,0 +1,2 @@
+# git archive substitutes the commit into VERSION (template/VERSION of the package, outside a checkout)
+VERSION export-subst

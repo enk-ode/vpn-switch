@@ -52,6 +52,18 @@ and **start** VPN configurations through the commands documented below.
     the database. Lives under *wireguard/* or *openvpn/*, optionally grouped
     in subdirectories via **add** and **link**.
 
+**Pair**
+:   How a database moves to another machine: **export** *strategy* (redacted | full | minimized) writes a *dump* (the
+    database as a script of its own commands) and a *bundle* (the files the
+    dump names: configurations, keys, receipts) that travel apart. The bundle
+    carries an attested *MANIFEST*, the dump carries a *seal* naming the
+    bundle, and one OpenPGP key (**openpgp add**, pinned as
+    *VPN_SWITCH_ARCHIVE_ATTEST_KEY*) signs both. **import** checks the pinned
+    signer, the seal and the MANIFEST before anything lands, files a receipt
+    (**provenance list**) and refuses a serial below the signer's last one
+    (no downgrade). A dump without a signature by the pinned key is refused
+    by **restore** too.
+
 **Patch**
 :   Provider configuration files are typically written for Linux — a WireGuard
     *.conf*, for example, embeds *PostUp*/*PostDown* hooks that call Linux's
@@ -228,16 +240,56 @@ Manage configurations, groups and tunnels for both **wireguard** and **openvpn**
 
 ## Database lifecycle
 
-Back up, restore and refresh the database itself.
+Back up, restore and refresh the database itself; export and import the
+signed pair (dump + bundle) that moves it to another machine.
+
+**export \<strategy\> \<dump\> \<bundle\>**
+:   Write the two artifacts that travel apart, bound and signed: the DUMP to a path of your choosing (commit it), the BUNDLE to its store. The strategy is the first word: redacted (no credentials, for sending) \| full (own machines, disaster recovery) \| minimized (rescue: the configurations and the key, no receipts). Every strategy describes the database completely and governs the payload only
+
+**restore \<dump\> [\<base\>]**
+:   Replay a dump into the current database -- only a dump signed by the PINNED attest key, at or above the lineage's serial; \<base\> binds where its base elements come from (default: this database). The dump's format (its '# Version:' header) selects the restore that speaks it: 'restore v\<format\> \<dump\> \<base\>', which reads the serial, the pinned key, the signer and the signer's floor once and hands them down -- into a database that does not yet hold the records (an identical import is refused as 'already exists', the rest replays)
+
+**filter \<collection\> \<filtered\>**
+:   Apply the default strategy to a collection (delegates: default -\> redacted)
+
+**filter redacted \<collection\> \<filtered\>**
+:   Drop what is a secret: the VPN configurations themselves (wireguard/*.conf, openvpn/*.ovpn carry keys and credentials) -- and always the operational directories. The description still travels complete (categories, links, sessions, keys, receipts); what a bug report or a second machine's skeleton needs, without the credentials. The collection is readable: rewrite to 'filter write redacted ...', else an error line
+
+**filter full \<collection\> \<filtered\>**
+:   Keep everything except the operational directories: the configurations with their keys travel. For one's own machines (a rescue medium, a second host), never for sending to strangers. The collection is readable: rewrite to 'filter write full ...', else an error line
+
+**filter minimized \<collection\> \<filtered\>**
+:   Keep what connecting needs only: the configurations (wireguard/, openvpn/) and the attest key; no receipts. What a rescue system needs to come online, nothing of the lineage. The collection is readable: rewrite to 'filter write minimized ...', else an error line
+
+**bundle \<collection\> \<archive\>**
+:   Pack the collected files with VPN_SWITCH_ARCHIVER: the collection is readable, the archiver set, the archive path absolute, the manifest pair (MANIFEST + MANIFEST.asc) lies beside the collection -- an archive that carries no tamper detection is not an artifact this tool produces -- and the collection lives inside the database (the pair is packed by its database-relative path); then 'bundle pack'
+
+**seal \<dump\> \<bundle\>**
+:   Append the bundle's sha256 and size to the dump as its seal line ('# Bundle: sha256=... bytes=...'): both files readable, the dump not yet sealed (a dump names ONE bundle) and not yet attested (sealing after signing would invalidate the signature); then 'seal write'. Attest the dump AFTER sealing so one signature covers both
+
+**seal verify \<dump\> \<bundle\>**
+:   Check that the dump's seal line names THIS bundle (sha256 and size): both files readable, the dump sealed, the seal matching -- a mismatch fails the command before anything is extracted
+
+**incoming clear \<directory\>**
+:   Empty one scratch directory under $VPN_SWITCH_ROOT/incoming/ -- import's own unpacking area, cleared before each extract so a re-import never trips over the last one. The path lies below incoming/ and carries no '..': rewrite to 'incoming remove', else an error line (only import's own scratch is cleared here, never a database)
+
+**extract \<archive\> \<destination\>**
+:   Unpack an archive into a scratch directory with VPN_SWITCH_EXTRACTOR: the archive readable, the extractor set, the destination absolute and empty (or not yet there); then 'extract unpack'
+
+**import \<dump\> \<bundle\>**
+:   Replay an exported pair into the current database, checked end to end BEFORE anything lands, cheapest first, every detail read ONCE on the way in and handed down: the dump's serial, the pinned signer, the dump's signature (gpg once), the signer's floor, this database's serial; then 'import \<dump\> \<bundle\> \<serial\> \<key\> \<fpr\> \<floor\> \<cur\>' -- the seal (this bundle is the one the dump names), the bundle unpacked into import's own scratch under incoming/, its MANIFEST (pinned signer, every hash), the receipt filed BEFORE the replay (the replay runs keep-going, so a redacted pair's withheld elements cost no receipt), the replay. ONLY into an EMPTY database (a fresh bootstrap with the attest key pinned): on a database that already holds the configs the replay reports them as existing and goes on
+
+**attest \<file\> \<key\>**
+:   Sign a file with a registered openpgp key (armored detached signature -\> \<file\>.asc): the file exists, the record exists and carries its keyid; then 'attest sign'
+
+**attest verify \<file\> \<key\>**
+:   Check a detached signature at generation time -- signed by the PINNED key, key neither expired nor revoked: the file exists, the record exists and is complete; then 'attest signer pinned' (a finding fails the command)
 
 **dump**
-:   Export the database as an executable shell script
+:   Export the database as an executable shell script: the export serial read here, then 'dump \<serial\>' -- the header (version, date, serial), the environment prologue, the keys, every protocol, the sessions, the receipts, the environment epilogue. Import lines reference base elements against "$VPN_SWITCH_ARCHIVE_BASE"; 'export' pairs the dump with the bundle that carries them
 
 **batch \<file\>**
 :   Execute a file of vpn-switch commands line by line
-
-**restore \<file\>**
-:   Restore the database from a previously-generated dump file
 
 **env sync**
 :   Refresh environment defaults in .env/default/ from source templates
@@ -245,8 +297,55 @@ Back up, restore and refresh the database itself.
 **version sync**
 :   Stamp the database's .version with the source's current SHA
 
+**manifest \<collection\> \<manifest\>**
+:   Hash every entry of a collection into a manifest, (LC_ALL=C-sorted 'path sha256=hash', symlinks as 'path symlink=target'): the collection is readable, the manifest is named MANIFEST (import looks for it by name, next to the collection), every entry is hashable; then 'manifest write' -- everything hashed at generation, the emission is one concrete heredoc write
+
+**manifest attest \<collection\> \<key\>**
+:   Write the manifest for a collection and sign it, side by side with the collection: manifest + attest
+
+**manifest verify \<manifest\> \<base\> \<key\>**
+:   Verify a manifest, both judgments at generation time: the signature (attest verify: signed by the PINNED key, key neither expired nor revoked) and the tree (manifest match: every listed entry present and identical) -- a finding fails the batch before restore replays anything. The key is the RECEIVER's openpgp record naming the signer it expects
+
+**manifest match \<manifest\> \<base\>**
+:   Does the tree under \<base\> match the manifest? The manifest is readable and lists entries, the base exists; then 'manifest tree matches' -- every listed file hashes identically, every listed symlink points where recorded (MISSING, CHANGED, RETARGETED fail). Files present but unlisted are not findings: the base is an extraction directory
+
 **phases sync [\<phase\>]**
 :   Refresh phase scripts (firewall, vpn, dns) from source templates
+
+**provenance serial**
+:   Advance the export serial by one: the number read here, then 'provenance serial \<current\>' -- export does this LAST, once the pair is attested: the dump header already carries current+1, so a failed export leaves the number to the next attempt (serials were once lost to a pinentry that could not open)
+
+**provenance add \<dump\> \<bundle\>**
+:   File the receipt of an admitted import. Every detail read ONCE on the way in and handed down -- the dump's serial, the pinned key, the signer (gpg once), the signer's floor, this database's serial -- then 'provenance add \<dump\> \<bundle\> \<serial\> \<key\> \<fpr\> \<floor\> \<cur\>': the bundle readable or '-', the serial not a downgrade, 'provenance receipt' (files it, or says it is filed, or refuses a differing one) and the export serial raised to the imported one
+
+**provenance import \<id\> \<absfile\>**
+:   Copy ONE file of a receipt record from another database (dump/restore base element; the record directory is created on first file): the id is a record name, the source exists; then 'provenance import place'
+
+**provenance dump**
+:   Emit the provenance portion of a database dump: one 'provenance import' line per receipt file (cat-pinned: dump TEXT, replayed by restore); none is a comment line
+
+**provenance collect**
+:   Text terminal: the receipt record files that belong into an archive, by their real path against "$VPN_SWITCH_ARCHIVE_BASE"
+
+**provenance list**
+:   The export serial and every receipt: the serial read here, then 'provenance list \<serial\>' renders
+
+## Keys
+
+The attest key: an openpgp record names the GnuPG key that signs what
+this database exports and the signer a receiver expects (pinned).
+
+**openpgp add \<name\> \<keyid\> [\<gnupghome\>]**
+:   Register a GnuPG attest key; gnupghome for a keyring living elsewhere: the name is a record name, the keyid is hex; then 'openpgp record'
+
+**openpgp dump**
+:   Emit the openpgp portion of a database dump: one 'openpgp add' replay line per registered key, in the arity of the record (cat-pinned: dump TEXT, replayed by 'restore'), plus one 'openpgp import' per extra file; none is a comment line
+
+**openpgp import \<name\> \<absfile\>**
+:   Copy ONE extra file into the key record -- dump/restore base element (the schema files travel as the 'openpgp add' replay): rewrite to 'key import openpgp \<name\> \<absfile\>'
+
+**openpgp collect**
+:   List the files of the openpgp key records that belong into an archive -- public material only; private key material stays a path promise into the world: one 'openpgp collect \<key\>' per record, none is a comment line
 
 ## Configuration
 
@@ -291,6 +390,9 @@ Inspect current state and check health.
 
 **inspect**
 :   Full descriptive state dump (sessions, configs, phases, system)
+
+**openpgp prerequisites**
+:   Act terminal: the runtime check of the GnuPG attest toolchain. No card requirement here: gpg is card-agnostic (a keyring stub routes to the card transparently), and a pure-keyring key needs no card at all
 
 **logs validate**
 :   Check for old log files beyond the retention period

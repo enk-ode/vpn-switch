@@ -78,7 +78,7 @@ for file in "$VPN_SWITCH_DIR"/include/*.sh "$VPN_SWITCH_DIR"/vpn-switch.sh; do
   [ ! -f "$file" ] && continue
 
   # Find terminal functions (_func)
-  grep -n "^_[^_][a-z_]*[0-9]() {" "$file" 2>/dev/null | while IFS=: read -r line_num func_line; do
+  grep -n "^_[^_][a-z0-9_]*[0-9]() {" "$file" 2>/dev/null | while IFS=: read -r line_num func_line; do
     func_name=$(echo "$func_line" | sed 's/() {.*//')
 
     # Skip excluded functions

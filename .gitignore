@@ -24,3 +24,7 @@ template/VERSION
 # Temporary files
 session.txt
 backup.sh
+pkg/
+pkgstage/
+port/distinfo
+port/work/

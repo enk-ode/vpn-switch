@@ -65,6 +65,18 @@
   <dd>A static <i>.conf</i> (WireGuard) or <i>.ovpn</i> (OpenVPN) file imported
       into the database. Lives under <i>wireguard/</i> or <i>openvpn/</i>,
       optionally grouped in subdirectories via <b>add</b> and <b>link</b>.</dd>
+  <dt id="Pair"><a class="permalink" href="#Pair"><b>Pair</b></a></dt>
+  <dd>How a database moves to another machine: <b>export</b> <i>strategy</i>
+      (redacted | full | minimized) writes a <i>dump</i> (the database as a
+      script of its own commands) and a <i>bundle</i> (the files the dump names:
+      configurations, keys, receipts) that travel apart. The bundle carries an
+      attested <i>MANIFEST</i>, the dump carries a <i>seal</i> naming the
+      bundle, and one OpenPGP key (<b>openpgp</b> <b>add</b>, pinned as
+      <i>VPN_SWITCH_ARCHIVE_ATTEST_KEY</i>) signs both. <b>import</b> checks the
+      pinned signer, the seal and the MANIFEST before anything lands, files a
+      receipt (<b>provenance list</b>) and refuses a serial below the
+      signer&#x2019;s last one (no downgrade). A dump without a signature by the
+      pinned key is refused by <b>restore</b> too.</dd>
   <dt id="Patch"><a class="permalink" href="#Patch"><b>Patch</b></a></dt>
   <dd>Provider configuration files are typically written for Linux &#x2014; a
       WireGuard <i>.conf</i>, for example, embeds <i>PostUp</i>/<i>PostDown</i>
@@ -258,25 +270,220 @@ vpn-switch inspect            -&gt;  all &lt;object&gt; inspect (batch)
 <section class="Ss">
 <h3 class="Ss" id="Database_lifecycle"><a class="permalink" href="#Database_lifecycle">Database
   lifecycle</a></h3>
-<p class="Pp">Back up, restore and refresh the database itself.</p>
+<p class="Pp">Back up, restore and refresh the database itself; export and
+    import the signed pair (dump + bundle) that moves it to another machine.</p>
 <dl class="Bl-tag">
+  <dt id="export"><a class="permalink" href="#export"><b>export &lt;strategy&gt;
+    &lt;dump&gt; &lt;bundle&gt;</b></a></dt>
+  <dd>Write the two artifacts that travel apart, bound and signed: the DUMP to a
+      path of your choosing (commit it), the BUNDLE to its store. The strategy
+      is the first word: redacted (no credentials, for sending) | full (own
+      machines, disaster recovery) | minimized (rescue: the configurations and
+      the key, no receipts). Every strategy describes the database completely
+      and governs the payload only</dd>
+  <dt id="restore"><a class="permalink" href="#restore"><b>restore &lt;dump&gt;
+    [&lt;base&gt;]</b></a></dt>
+  <dd>Replay a dump into the current database &#x2013; only a dump signed by the
+      PINNED attest key, at or above the lineage&#x2019;s serial; &lt;base&gt;
+      binds where its base elements come from (default: this database). The
+      dump&#x2019;s format (its `# Version:' header) selects the restore that
+      speaks it: `restore v&lt;format&gt; &lt;dump&gt; &lt;base&gt;', which
+      reads the serial, the pinned key, the signer and the signer&#x2019;s floor
+      once and hands them down &#x2013; into a database that does not yet hold
+      the records (an identical import is refused as `already exists', the rest
+      replays)</dd>
+  <dt id="filter"><a class="permalink" href="#filter"><b>filter
+    &lt;collection&gt; &lt;filtered&gt;</b></a></dt>
+  <dd>Apply the default strategy to a collection (delegates: default -&gt;
+      redacted)</dd>
+  <dt id="filter~2"><a class="permalink" href="#filter~2"><b>filter redacted
+    &lt;collection&gt; &lt;filtered&gt;</b></a></dt>
+  <dd>Drop what is a secret: the VPN configurations themselves
+      (wireguard/<i>.conf, openvpn/</i>.ovpn carry keys and credentials)
+      &#x2013; and always the operational directories. The description still
+      travels complete (categories, links, sessions, keys, receipts); what a bug
+      report or a second machine&#x2019;s skeleton needs, without the
+      credentials. The collection is readable: rewrite to `filter write redacted
+      ...', else an error line</dd>
+  <dt id="filter~3"><a class="permalink" href="#filter~3"><b>filter full
+    &lt;collection&gt; &lt;filtered&gt;</b></a></dt>
+  <dd>Keep everything except the operational directories: the configurations
+      with their keys travel. For one&#x2019;s own machines (a rescue medium, a
+      second host), never for sending to strangers. The collection is readable:
+      rewrite to `filter write full ...', else an error line</dd>
+  <dt id="filter~4"><a class="permalink" href="#filter~4"><b>filter minimized
+    &lt;collection&gt; &lt;filtered&gt;</b></a></dt>
+  <dd>Keep what connecting needs only: the configurations (wireguard/, openvpn/)
+      and the attest key; no receipts. What a rescue system needs to come
+      online, nothing of the lineage. The collection is readable: rewrite to
+      `filter write minimized ...', else an error line</dd>
+  <dt id="bundle"><a class="permalink" href="#bundle"><b>bundle
+    &lt;collection&gt; &lt;archive&gt;</b></a></dt>
+  <dd>Pack the collected files with VPN_SWITCH_ARCHIVER: the collection is
+      readable, the archiver set, the archive path absolute, the manifest pair
+      (MANIFEST + MANIFEST.asc) lies beside the collection &#x2013; an archive
+      that carries no tamper detection is not an artifact this tool produces
+      &#x2013; and the collection lives inside the database (the pair is packed
+      by its database-relative path); then `bundle pack'</dd>
+  <dt id="seal"><a class="permalink" href="#seal"><b>seal &lt;dump&gt;
+    &lt;bundle&gt;</b></a></dt>
+  <dd>Append the bundle&#x2019;s sha256 and size to the dump as its seal line
+      (`# Bundle: sha256=... bytes=...'): both files readable, the dump not yet
+      sealed (a dump names ONE bundle) and not yet attested (sealing after
+      signing would invalidate the signature); then `seal write'. Attest the
+      dump AFTER sealing so one signature covers both</dd>
+  <dt id="seal~2"><a class="permalink" href="#seal~2"><b>seal verify
+    &lt;dump&gt; &lt;bundle&gt;</b></a></dt>
+  <dd>Check that the dump&#x2019;s seal line names THIS bundle (sha256 and
+      size): both files readable, the dump sealed, the seal matching &#x2013; a
+      mismatch fails the command before anything is extracted</dd>
+  <dt id="incoming"><a class="permalink" href="#incoming"><b>incoming clear
+    &lt;directory&gt;</b></a></dt>
+  <dd>Empty one scratch directory under $VPN_SWITCH_ROOT/incoming/ &#x2013;
+      import&#x2019;s own unpacking area, cleared before each extract so a
+      re-import never trips over the last one. The path lies below incoming/ and
+      carries no `..': rewrite to `incoming remove', else an error line (only
+      import&#x2019;s own scratch is cleared here, never a database)</dd>
+  <dt id="extract"><a class="permalink" href="#extract"><b>extract
+    &lt;archive&gt; &lt;destination&gt;</b></a></dt>
+  <dd>Unpack an archive into a scratch directory with VPN_SWITCH_EXTRACTOR: the
+      archive readable, the extractor set, the destination absolute and empty
+      (or not yet there); then `extract unpack'</dd>
+  <dt id="import"><a class="permalink" href="#import"><b>import &lt;dump&gt;
+    &lt;bundle&gt;</b></a></dt>
+  <dd>Replay an exported pair into the current database, checked end to end
+      BEFORE anything lands, cheapest first, every detail read ONCE on the way
+      in and handed down: the dump&#x2019;s serial, the pinned signer, the
+      dump&#x2019;s signature (gpg once), the signer&#x2019;s floor, this
+      database&#x2019;s serial; then `import &lt;dump&gt; &lt;bundle&gt;
+      &lt;serial&gt; &lt;key&gt; &lt;fpr&gt; &lt;floor&gt; &lt;cur&gt;' &#x2013;
+      the seal (this bundle is the one the dump names), the bundle unpacked into
+      import&#x2019;s own scratch under incoming/, its MANIFEST (pinned signer,
+      every hash), the receipt filed BEFORE the replay (the replay runs
+      keep-going, so a redacted pair&#x2019;s withheld elements cost no
+      receipt), the replay. ONLY into an EMPTY database (a fresh bootstrap with
+      the attest key pinned): on a database that already holds the configs the
+      replay reports them as existing and goes on</dd>
+  <dt id="attest"><a class="permalink" href="#attest"><b>attest &lt;file&gt;
+    &lt;key&gt;</b></a></dt>
+  <dd>Sign a file with a registered openpgp key (armored detached signature
+      -&gt; &lt;file&gt;.asc): the file exists, the record exists and carries
+      its keyid; then `attest sign'</dd>
+  <dt id="attest~2"><a class="permalink" href="#attest~2"><b>attest verify
+    &lt;file&gt; &lt;key&gt;</b></a></dt>
+  <dd>Check a detached signature at generation time &#x2013; signed by the
+      PINNED key, key neither expired nor revoked: the file exists, the record
+      exists and is complete; then `attest signer pinned' (a finding fails the
+      command)</dd>
   <dt id="dump"><a class="permalink" href="#dump"><b>dump</b></a></dt>
-  <dd>Export the database as an executable shell script</dd>
+  <dd>Export the database as an executable shell script: the export serial read
+      here, then `dump &lt;serial&gt;' &#x2013; the header (version, date,
+      serial), the environment prologue, the keys, every protocol, the sessions,
+      the receipts, the environment epilogue. Import lines reference base
+      elements against &#x201C;$VPN_SWITCH_ARCHIVE_BASE&#x201D;; `export' pairs
+      the dump with the bundle that carries them</dd>
   <dt id="batch"><a class="permalink" href="#batch"><b>batch
     &lt;file&gt;</b></a></dt>
   <dd>Execute a file of vpn-switch commands line by line</dd>
-  <dt id="restore"><a class="permalink" href="#restore"><b>restore
-    &lt;file&gt;</b></a></dt>
-  <dd>Restore the database from a previously-generated dump file</dd>
   <dt id="env"><a class="permalink" href="#env"><b>env sync</b></a></dt>
   <dd>Refresh environment defaults in .env/default/ from source templates</dd>
   <dt id="version~2"><a class="permalink" href="#version~2"><b>version
     sync</b></a></dt>
   <dd>Stamp the database&#x2019;s .version with the source&#x2019;s current
     SHA</dd>
+  <dt id="manifest"><a class="permalink" href="#manifest"><b>manifest
+    &lt;collection&gt; &lt;manifest&gt;</b></a></dt>
+  <dd>Hash every entry of a collection into a manifest, (LC_ALL=C-sorted `path
+      sha256=hash', symlinks as `path symlink=target'): the collection is
+      readable, the manifest is named MANIFEST (import looks for it by name,
+      next to the collection), every entry is hashable; then `manifest write'
+      &#x2013; everything hashed at generation, the emission is one concrete
+      heredoc write</dd>
+  <dt id="manifest~2"><a class="permalink" href="#manifest~2"><b>manifest attest
+    &lt;collection&gt; &lt;key&gt;</b></a></dt>
+  <dd>Write the manifest for a collection and sign it, side by side with the
+      collection: manifest + attest</dd>
+  <dt id="manifest~3"><a class="permalink" href="#manifest~3"><b>manifest verify
+    &lt;manifest&gt; &lt;base&gt; &lt;key&gt;</b></a></dt>
+  <dd>Verify a manifest, both judgments at generation time: the signature
+      (attest verify: signed by the PINNED key, key neither expired nor revoked)
+      and the tree (manifest match: every listed entry present and identical)
+      &#x2013; a finding fails the batch before restore replays anything. The
+      key is the RECEIVER&#x2019;s openpgp record naming the signer it
+    expects</dd>
+  <dt id="manifest~4"><a class="permalink" href="#manifest~4"><b>manifest match
+    &lt;manifest&gt; &lt;base&gt;</b></a></dt>
+  <dd>Does the tree under &lt;base&gt; match the manifest? The manifest is
+      readable and lists entries, the base exists; then `manifest tree matches'
+      &#x2013; every listed file hashes identically, every listed symlink points
+      where recorded (MISSING, CHANGED, RETARGETED fail). Files present but
+      unlisted are not findings: the base is an extraction directory</dd>
   <dt id="phases"><a class="permalink" href="#phases"><b>phases sync
     [&lt;phase&gt;]</b></a></dt>
   <dd>Refresh phase scripts (firewall, vpn, dns) from source templates</dd>
+  <dt id="provenance"><a class="permalink" href="#provenance"><b>provenance
+    serial</b></a></dt>
+  <dd>Advance the export serial by one: the number read here, then `provenance
+      serial &lt;current&gt;' &#x2013; export does this LAST, once the pair is
+      attested: the dump header already carries current+1, so a failed export
+      leaves the number to the next attempt (serials were once lost to a
+      pinentry that could not open)</dd>
+  <dt id="provenance~2"><a class="permalink" href="#provenance~2"><b>provenance
+    add &lt;dump&gt; &lt;bundle&gt;</b></a></dt>
+  <dd>File the receipt of an admitted import. Every detail read ONCE on the way
+      in and handed down &#x2013; the dump&#x2019;s serial, the pinned key, the
+      signer (gpg once), the signer&#x2019;s floor, this database&#x2019;s
+      serial &#x2013; then `provenance add &lt;dump&gt; &lt;bundle&gt;
+      &lt;serial&gt; &lt;key&gt; &lt;fpr&gt; &lt;floor&gt; &lt;cur&gt;': the
+      bundle readable or `-', the serial not a downgrade, `provenance receipt'
+      (files it, or says it is filed, or refuses a differing one) and the export
+      serial raised to the imported one</dd>
+  <dt id="provenance~3"><a class="permalink" href="#provenance~3"><b>provenance
+    import &lt;id&gt; &lt;absfile&gt;</b></a></dt>
+  <dd>Copy ONE file of a receipt record from another database (dump/restore base
+      element; the record directory is created on first file): the id is a
+      record name, the source exists; then `provenance import place'</dd>
+  <dt id="provenance~4"><a class="permalink" href="#provenance~4"><b>provenance
+    dump</b></a></dt>
+  <dd>Emit the provenance portion of a database dump: one `provenance import'
+      line per receipt file (cat-pinned: dump TEXT, replayed by restore); none
+      is a comment line</dd>
+  <dt id="provenance~5"><a class="permalink" href="#provenance~5"><b>provenance
+    collect</b></a></dt>
+  <dd>Text terminal: the receipt record files that belong into an archive, by
+      their real path against &#x201C;$VPN_SWITCH_ARCHIVE_BASE&#x201D;</dd>
+  <dt id="provenance~6"><a class="permalink" href="#provenance~6"><b>provenance
+    list</b></a></dt>
+  <dd>The export serial and every receipt: the serial read here, then
+      `provenance list &lt;serial&gt;' renders</dd>
+</dl>
+</section>
+<section class="Ss">
+<h3 class="Ss" id="Keys"><a class="permalink" href="#Keys">Keys</a></h3>
+<p class="Pp">The attest key: an openpgp record names the GnuPG key that signs
+    what this database exports and the signer a receiver expects (pinned).</p>
+<dl class="Bl-tag">
+  <dt id="openpgp"><a class="permalink" href="#openpgp"><b>openpgp add
+    &lt;name&gt; &lt;keyid&gt; [&lt;gnupghome&gt;]</b></a></dt>
+  <dd>Register a GnuPG attest key; gnupghome for a keyring living elsewhere: the
+      name is a record name, the keyid is hex; then `openpgp record'</dd>
+  <dt id="openpgp~2"><a class="permalink" href="#openpgp~2"><b>openpgp
+    dump</b></a></dt>
+  <dd>Emit the openpgp portion of a database dump: one `openpgp add' replay line
+      per registered key, in the arity of the record (cat-pinned: dump TEXT,
+      replayed by `restore'), plus one `openpgp import' per extra file; none is
+      a comment line</dd>
+  <dt id="openpgp~3"><a class="permalink" href="#openpgp~3"><b>openpgp import
+    &lt;name&gt; &lt;absfile&gt;</b></a></dt>
+  <dd>Copy ONE extra file into the key record &#x2013; dump/restore base element
+      (the schema files travel as the `openpgp add' replay): rewrite to `key
+      import openpgp &lt;name&gt; &lt;absfile&gt;'</dd>
+  <dt id="openpgp~4"><a class="permalink" href="#openpgp~4"><b>openpgp
+    collect</b></a></dt>
+  <dd>List the files of the openpgp key records that belong into an archive
+      &#x2013; public material only; private key material stays a path promise
+      into the world: one `openpgp collect &lt;key&gt;' per record, none is a
+      comment line</dd>
 </dl>
 </section>
 <section class="Ss">
@@ -326,6 +533,11 @@ vpn-switch inspect            -&gt;  all &lt;object&gt; inspect (batch)
   <dd>Show a brief status of the active VPN and its interfaces</dd>
   <dt id="inspect"><a class="permalink" href="#inspect"><b>inspect</b></a></dt>
   <dd>Full descriptive state dump (sessions, configs, phases, system)</dd>
+  <dt id="openpgp~5"><a class="permalink" href="#openpgp~5"><b>openpgp
+    prerequisites</b></a></dt>
+  <dd>Act terminal: the runtime check of the GnuPG attest toolchain. No card
+      requirement here: gpg is card-agnostic (a keyring stub routes to the card
+      transparently), and a pure-keyring key needs no card at all</dd>
   <dt id="logs"><a class="permalink" href="#logs"><b>logs validate</b></a></dt>
   <dd>Check for old log files beyond the retention period</dd>
   <dt id="logs~2"><a class="permalink" href="#logs~2"><b>logs clean</b></a></dt>

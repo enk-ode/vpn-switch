@@ -1073,10 +1073,10 @@ _session_validate0() {
 }
 
 #@help ___session_dump0
-# @internal session portion of 'dump'
+# @internal session portion of 'dump': every saved session as the user creates one (TUTORIAL_SESSIONS) -- '<protocol> start <config>' then 'session save <name>' (a session with several names: one start, one save per name) -- inside a guard that binds the connect terminals to cat (the session is built with its scripts, no connection is made) and switches the environment cache back on after each pin change; nothing of the session's inner form (PID, directories, links) is named
 #@end
 ___session_dump0() {
-  local session_pseudo="$VPN_SWITCH_BASE/session"
+  local session_pseudo="$VPN_SWITCH_BASE/session" lines="" link="" name="" dir="" proto="" original="" prev=""
 
   # Check if session directory exists
   if [ ! -d "$session_pseudo" ]; then
@@ -1086,49 +1086,41 @@ ___session_dump0() {
 
   echo "# Dump named sessions"
 
-  # Iterate over all symlinks in session/ directory
-  for session_link in "$session_pseudo"/*; do
-    # Skip if no links found
-    [ ! -L "$session_link" ] && continue
-
-    local session_name=$(basename -- "$session_link")
-
-    # Skip 'latest' symlink (transient system state, recreated on next start)
-    [ "$session_name" = "latest" ] && continue
-
-    # Resolve symlink to get actual session directory
-    local session_dir=$(readlink -f "$session_link" 2>>"$LOG_FILE")
-    [ ! -d "$session_dir" ] && continue
-
-    # Read session metadata
-    local protocol_file="$session_dir/protocol"
-    [ ! -f "$protocol_file" ] && continue
-
-    local original_file="$session_dir/original"
-    [ ! -f "$original_file" ] && continue
-
-    local protocol=$(cat "$protocol_file" 2>>"$LOG_FILE")
-    local original_config=$(cat "$original_file" 2>>"$LOG_FILE")
-
-    # Validate we have the required metadata
-    [ -z "$protocol" ] && continue
-    [ -z "$original_config" ] && continue
-
-    # Read interface from session metadata
-    local interface_file="$session_dir/interface"
-    [ ! -f "$interface_file" ] && continue
-    local interface=$(cat "$interface_file" 2>>"$LOG_FILE")
-    [ -z "$interface" ] && continue
-
-    # Output feingranular commands to recreate session structure
-    # This avoids calling 'connect' which would try to start the VPN
-    # Uses a unique PID placeholder that will be replaced at restore time
-    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" session create \"\$\$\""
-    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" session populate \"\$\$\" \"$protocol\" \"$interface\""
-    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" $protocol patch \"\$\$\" \"$original_config\""
-    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" $protocol configure \"\$\$\""
-    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" session save $session_name"
+  # Generation time: one line per name, "<session dir> <protocol> <config> <name>",
+  # sorted so the names of one session stand together. latest and latest-<iface>
+  # are system-managed and transient, not part of the description.
+  for link in "$session_pseudo"/*; do
+    [ -L "$link" ] || continue
+    name=$(basename -- "$link")
+    case "$name" in latest|latest-*) continue ;; esac
+    dir=$(readlink -f "$link" 2>>"$LOG_FILE")
+    [ -d "$dir" ] || continue
+    proto=$(head -n1 "$dir/protocol" 2>>"$LOG_FILE")
+    original=$(head -n1 "$dir/original" 2>>"$LOG_FILE")
+    [ -n "$proto" ] && [ -n "$original" ] || continue
+    lines="$lines$dir $proto $(basename -- "$original") $name
+"
   done
+  [ -n "$lines" ] || return 0
+
+  # The guard: start builds the session and would connect -- the connect
+  # terminals bound to cat and the environment refreshed, the session is
+  # built with its scripts, no connection is made; the pins lifted and the
+  # environment refreshed again afterwards.
+  echo "# Saved sessions: start + save, the connect step bound to cat (a session is built, no connection is made)"
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" setenv VPN_SWITCH_INTERPRETER_wireguard_connect1 cat"
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" setenv VPN_SWITCH_INTERPRETER_openvpn_connect1 cat"
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" environment refresh"
+  printf '%s' "$lines" | sort | while read -r dir proto config name; do
+    if [ "$dir" != "$prev" ]; then
+      echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" $proto start $config"
+      prev="$dir"
+    fi
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" session save $name"
+  done
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" unsetenv VPN_SWITCH_INTERPRETER_wireguard_connect1"
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" unsetenv VPN_SWITCH_INTERPRETER_openvpn_connect1"
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" environment refresh"
 }
 
 #@help __session_help0
@@ -1259,7 +1251,7 @@ _session_describe0() {
 # which run before modules are loaded.
 
 
-# --- sessions, interfaces, start and stop (out of vpn-switch.sh, 15.09.2026) ---
+# --- sessions, interfaces, start and stop (out of vpn-switch.sh) ---
 
 # random_select - Randomly select one item from list
 #

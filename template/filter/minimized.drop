@@ -1,0 +1,5 @@
+# filter minimized: only the operational directories are dropped by name;
+# the keep table says what the rescue vocabulary is.
+# <glob> <reason>
+*/.tmp/* operational
+*/.log/* operational

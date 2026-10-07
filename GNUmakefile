@@ -280,7 +280,7 @@ metadata:
 	    sh scripts/generate-metadata.sh --target "$$f" >/dev/null; \
 	done
 	@echo "Generating template/VERSION..."
-	@git rev-parse HEAD > template/VERSION 2>/dev/null || echo "unknown" > template/VERSION
+	@git rev-parse HEAD > template/VERSION 2>/dev/null || cp VERSION template/VERSION 2>/dev/null || echo "unknown" > template/VERSION
 	@echo "  template/VERSION: $$(cat template/VERSION)"
 
 # Regenerate man page (groff) and HTML rendering from the single Markdown
@@ -373,7 +373,7 @@ $(INDEX_DIR)/functions.txt: $(SCRIPT) $(INDEX_DIR)
 	@grep -n '^[_a-zA-Z][_a-zA-Z0-9]*()' $(SCRIPT) > $@ || true
 
 $(INDEX_DIR)/anchors.txt: $(SCRIPT) $(INDEX_DIR)
-	@grep -n '^_[a-z_]*[0-9]()' $(SCRIPT) > $@ || true
+	@grep -n '^__*[a-z][a-z0-9_]*[0-9]()' $(SCRIPT) > $@ || true
 
 functions: $(INDEX_DIR)/functions.txt
 	@echo "=== All Functions ==="
@@ -383,6 +383,34 @@ stats: metadata
 	@echo "=== Code Statistics ==="
 	@echo "Total lines:        $$(wc -l < $(SCRIPT))"
 	@echo "Functions:          $$(grep -c '^[_a-zA-Z][_a-zA-Z0-9]*()' $(SCRIPT))"
-	@echo "Anchor functions:   $$(grep -c '^_[a-z_]*[0-9]()' $(SCRIPT))"
+	@echo "Anchor functions:   $$(grep -c '^__*[a-z][a-z0-9_]*[0-9]()' $(SCRIPT))"
 	@echo "Include modules:    $$(ls include/*.sh 2>/dev/null | wc -l)"
 	@echo "Template files:     $$(find template -type f | wc -l)"
+
+# --- package ----------------------------------------------------------------
+# A FreeBSD package of this checkout: 'install' into a staging root, the
+# +MANIFEST from the name and the commit count (0.0.<count> until a tag names
+# a release), the plist from the staged tree, pkg create into PKGDIR. The
+# rescue system of an elebake stage depends on it (elebake stage rescue tool
+# package <stage> vpn-switch).
+PKGNAME    := vpn-switch
+PKGVERSION := 0.0.$(shell git rev-list --count HEAD 2>/dev/null || echo 0)
+PKGDIR     ?= $(CURDIR)/pkg
+PKGSTAGE   ?= $(CURDIR)/pkgstage
+PKGABI     := $(shell pkg config ABI 2>/dev/null || echo unknown)
+
+.PHONY: package package-clean
+package:
+	@test ! -d $(PKGSTAGE) || chmod -R u+w $(PKGSTAGE); rm -rf $(PKGSTAGE) && mkdir -p $(PKGDIR)
+	@$(MAKE) install DESTDIR=$(PKGSTAGE) PREFIX=$(PREFIX) > /dev/null
+	@printf 'name: "%s"\nversion: "%s"\norigin: "net/%s"\ncomment: "switch between WireGuard and OpenVPN sessions with pf and DNS phases"\n' \
+	    '$(PKGNAME)' '$(PKGVERSION)' '$(PKGNAME)' > $(PKGSTAGE)/+MANIFEST
+	@printf 'desc: "vpn-switch manages VPN connections as sessions: import configurations, patch them per phase (firewall, vpn, dns), start, stop, switch, dump and export the database as a signed pair. BSD-2-Clause."\n' >> $(PKGSTAGE)/+MANIFEST
+	@printf 'maintainer: "dr.johannes.bruegmann@gmail.com"\nwww: "https://github.com/enk-ode/vpn-switch"\nprefix: "%s"\narch: "%s"\nlicenselogic: "single"\nlicenses: ["BSD2CLAUSE"]\ndeps: { "wireguard-tools": { origin: "net/wireguard-tools", version: "0" }, openvpn: { origin: "security/openvpn", version: "0" }, gnupg: { origin: "security/gnupg", version: "0" } }\n' \
+	    '$(PREFIX)' '$(PKGABI)' >> $(PKGSTAGE)/+MANIFEST
+	@(cd $(PKGSTAGE)$(PREFIX) && find . \( -type f -o -type l \) | sed 's|^\./||' | sort) > $(PKGSTAGE)/plist
+	@pkg create -r $(PKGSTAGE) -M $(PKGSTAGE)/+MANIFEST -p $(PKGSTAGE)/plist -o $(PKGDIR)
+	@echo "package: $(PKGDIR)/$(PKGNAME)-$(PKGVERSION).pkg ($$(wc -l < $(PKGSTAGE)/plist | tr -d ' ') files)"
+
+package-clean:
+	@test ! -d $(PKGSTAGE) || chmod -R u+w $(PKGSTAGE); rm -rf $(PKGSTAGE)

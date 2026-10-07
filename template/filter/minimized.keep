@@ -1,0 +1,5 @@
+# filter minimized: what connecting needs -- the configurations and the
+# attest key. No receipts: the lineage is not the rescue's business.
+wireguard/*
+openvpn/*
+openpgp/*

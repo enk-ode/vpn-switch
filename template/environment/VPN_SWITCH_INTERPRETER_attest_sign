@@ -1,0 +1,2 @@
+sh
+# Act terminal of 'attest': gpg --detach-sign with the record's key.

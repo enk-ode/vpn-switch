@@ -246,7 +246,7 @@ _database_init0() {
 }
 
 #@help _environment_init1
-# @internal environment-defaults init helper (copy profile to .env/default)
+# @internal environment-defaults init helper: the templates of the profile into .env/default, a platform variant template/platform/<os>/environment/<VAR> before template/environment/<VAR>
 #@end
 _environment_init1() {
   local profile="${1:-minimal}"
@@ -274,10 +274,12 @@ _environment_init1() {
   echo "# Install environment templates for profile: $profile"
 
   # Generation time: iterate templates, emit concrete commands
-  local var_list
+  local var_list os
   var_list=$(head -1 "$profile_file")
+  os=$(platform_name)
   for varname in $var_list; do
     local template="$VPN_SWITCH_TEMPLATE_DIR/environment/$varname"
+    [ ! -f "$VPN_SWITCH_TEMPLATE_DIR/platform/$os/environment/$varname" ] || template="$VPN_SWITCH_TEMPLATE_DIR/platform/$os/environment/$varname"
     if [ -f "$template" ]; then
       echo "$MODIFY_FILE_COPY_FORCE '$template' '$base/.env/default/$varname'"
       echo "$MODIFY_FILE_PERMS 0600 '$base/.env/default/$varname'"
@@ -297,6 +299,24 @@ _environment_init1() {
   fi
 
   echo "echo '# Installed $profile profile' >&2"
+}
+
+#@help ___environment_refresh0
+# @command environment refresh
+# @summary The environment as a new call finds it: at generation time VPN_SWITCH_CACHE_ENV_ARGS and VPN_SWITCH_CONTEXT_BOOTSTRAPPED are unset and the cache file removed; then 'environment cache off' and 'environment cache on' -- the cache rebuilt from .env/, the calls after it load it afresh. A dump places it after the setenv lines of its prologue and of its epilogue
+# @group   configuration
+# @env     VPN_SWITCH_CACHE_ENV_ARGS        unset here, the file removed here
+# @env     VPN_SWITCH_CONTEXT_BOOTSTRAPPED  unset here
+# @see     environment cache
+# @see     dump
+#@end
+___environment_refresh0() {
+  unset VPN_SWITCH_CACHE_ENV_ARGS
+  unset VPN_SWITCH_CONTEXT_BOOTSTRAPPED
+  _environment_cache1 off >/dev/null 2>&1
+  _environment_cache1 on >/dev/null 2>&1
+  printf '%s\n' "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" environment cache off"
+  printf '%s\n' "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" environment cache on"
 }
 
 #@help __environment_cache0
@@ -613,14 +633,13 @@ _unsetenv1() {
 }
 
 #@help ___dumpenv1
-# @internal environment portion of 'dump'
+# @internal environment portion of 'dump': the setenv lines of the profile (prologue: the restore-safe subset; epilogue: every override of .env/local), then 'environment refresh' so the pins hold for the lines after it
 #@end
 ___dumpenv1() {
   local profile_name="$1"
   local base="$VPN_SWITCH_BASE"
   local profile_var="VPN_SWITCH_PROFILE_$(echo "$profile_name" | tr '[:lower:]' '[:upper:]')"
   local profile_file="$VPN_SWITCH_TEMPLATE_DIR/environment/$profile_var"
-  local cache_file="$base/.env/local/VPN_SWITCH_CACHE_ENV_ARGS"
 
   # Validate profile exists
   if [ ! -f "$profile_file" ]; then
@@ -640,7 +659,6 @@ ___dumpenv1() {
       [ -f "$local_file" ] || continue
       varname=$(basename "$local_file")
 
-      # Skip cache file - it's regenerated via "environment cache on" in dump
       if [ "$varname" = "VPN_SWITCH_CACHE_ENV_ARGS" ]; then
         continue
       fi
@@ -658,7 +676,6 @@ ___dumpenv1() {
     for varname in $profile_vars; do
       local local_file="$base/.env/local/$varname"
 
-      # Skip cache file - it's regenerated via "environment cache on" in dump
       if [ "$varname" = "VPN_SWITCH_CACHE_ENV_ARGS" ]; then
         continue
       fi
@@ -675,42 +692,45 @@ ___dumpenv1() {
     done
   fi
 
-  # After prologue/epilogue setenv commands, output cache enablement if cache is enabled
-  # This enables cache for fast import operations (prologue) and regenerates it after setenv (epilogue)
   if [ "$profile_name" = "prologue" ] || [ "$profile_name" = "epilogue" ]; then
-    # Only include cache commands if cache is actually enabled in source database
-    if [ -f "$cache_file" ]; then
-      echo ""
-      if [ "$profile_name" = "prologue" ]; then
-        echo "# Enable environment cache (makes imports 89-95% faster)"
-      else
-        echo "# Restore environment cache (VPN_SWITCH_CACHE_ENV_ARGS)"
-      fi
-      echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" environment cache on"
-    fi
+    echo ""
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" environment refresh"
   fi
 }
 
-#@help ___dump0
+#@help __dump0
 # @command dump
-# @summary Export the database as an executable shell script
+# @summary Export the database as an executable shell script: the export serial read here, then 'dump <serial>' -- the header (version, date, serial), the environment prologue, the keys, every protocol, the sessions, the receipts, the environment epilogue. Import lines reference base elements against "$VPN_SWITCH_ARCHIVE_BASE"; 'export' pairs the dump with the bundle that carries them
 # @group   database
 # @returns shell commands (a restorable dump; pipe to a file)
 # @example vpn-switch dump > backup.sh
+# @see     export
 # @see     restore
-# @see     batch
 #@end
-___dump0() {
+__dump0() {
+  local cur=""
+  cur=$(head -n1 "$VPN_SWITCH_BASE/export/serial" 2>/dev/null)
+  case "$cur" in ''|*[!0-9]*) cur=0 ;; esac
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" dump \"$cur\""
+}
+
+#@help ___dump1
+# @internal 'dump <serial>': the dump with the serial read -- header, prologue, keys, protocols, sessions, receipts, epilogue
+#@end
+___dump1() {
   local base="$VPN_SWITCH_BASE"
 
-  # Header
-  echo "# vpn-switch database dump"
-  echo "# Generated: $(date '+%Y-%m-%d %H:%M:%S')"
-  echo ""
+  # Header: generator, format, date, serial (restore reads the version)
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" dump header \"$1\""
 
   # Prologue - Transfer OLD database settings from .env/local/ (safe minimal set)
   echo "# Prologue - Transfer OLD database settings (safe minimal set for restore)"
   echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" dumpenv prologue"
+  echo ""
+
+  # The attest keys: the openpgp records travel as 'openpgp add' replays
+  echo "# Keys"
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" openpgp dump"
   echo ""
 
   # Body - Discover protocols dynamically and delegate to each (like ___list0, ___validate0)
@@ -733,6 +753,11 @@ ___dump0() {
   # Session dump (special case - pseudo-protocol but included for named sessions)
   echo "# Session dump"
   echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" session dump"
+  echo ""
+
+  # The receipts of every admitted import: where this database came from
+  echo "# Provenance"
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" provenance dump"
   echo ""
 
   # Epilogue - Restore complete user environment (all customizations)
@@ -994,49 +1019,6 @@ _batch2() {
   return "$batch_exit"
 }
 
-#@help __restore1
-# @command restore <file>
-# @summary Restore the database from a previously-generated dump file
-# @group   database
-# @param   file  dump file produced by 'dump'
-# @returns shell commands (replay the dump)
-# @env     VPN_SWITCH_BATCH_KEEP_GOING  0 = stop at the first failing line, 1 = replay everything
-# @example vpn-switch restore backup.sh
-# @see     dump
-#@end
-__restore1() {
-  local filepath="$1"
-
-  # Validate file argument
-  if [ -z "$filepath" ]; then
-    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"Usage: vpn-switch restore <filepath>\""
-    return
-  fi
-
-  if [ ! -f "$filepath" ]; then
-    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"Restore file not found: $filepath\""
-    return
-  fi
-
-  if [ ! -r "$filepath" ]; then
-    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" error \"Restore file not readable: $filepath\""
-    return
-  fi
-
-  # Set keep-going mode for batch execution
-  #
-  # Keep-going mode ensures restore completes even if some commands fail.
-  # Example: Duplicate imports fail, but categories/links/sessions still process.
-  #
-  export VPN_SWITCH_BATCH_KEEP_GOING=1
-
-  # Output batch command for interpreter to execute
-  #
-  # Note: Database must already be initialized (via bootstrap/init)
-  # If database doesn't exist, main() will error before reaching here
-  #
-  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" batch \"$filepath\""
-}
 
 #@help _printenv0
 # @command printenv [<VAR>]
@@ -1059,28 +1041,31 @@ EOF
 }
 
 
-# --- sync, version, import, list, link, remove (out of vpn-switch.sh, 15.09.2026) ---
+# --- sync, version, import, list, link, remove (out of vpn-switch.sh) ---
 
 # ___sync0 - Top-level sync orchestrator (batch combinator)
 #
-# Output: three vpn-switch subcommands to refresh the DB from source.
+# Output: four vpn-switch subcommands to refresh the DB from source.
 #
 # Usage: vpn-switch sync
 #
-# Refreshes the user's database (.env/default/, .include/phase/, .version)
-# against the system-wide source templates. Idempotent: safe to run after
-# every source upgrade. Per-user customisations in .env/local/ are not
-# touched.
+# Refreshes the user's database (the layout, .env/default/, .include/phase/,
+# .version) against the system-wide source templates. Idempotent: safe to
+# run after every source upgrade -- a database older than the source gains
+# the directories the source now expects (database init creates what is
+# missing and leaves what is there). Per-user customisations in .env/local/
+# are not touched.
 #
 #@help ___sync0
 # @command sync
-# @summary Refresh the database from installed source templates
+# @summary Refresh the database from installed source templates: the layout (database init), the phases, the environment defaults, the version stamp
 # @group   connection
-# @returns shell commands (phases sync + env sync + version sync)
+# @returns shell commands (database init + phases sync + env sync + version sync)
 # @example vpn-switch sync
 # @see     version
 #@end
 ___sync0() {
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" database init"
   echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" phases sync"
   echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" env sync"
   echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" version sync"

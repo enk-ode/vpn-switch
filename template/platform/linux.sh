@@ -38,7 +38,8 @@ EXAMINE_FILE_MTIME='stat -c %Y'       # Get file modification time (Unix epoch)
 EXAMINE_DATE_NOW='date "+%Y-%m-%d %H:%M:%S"'  # Get current date/time (human-readable)
 EXAMINE_FILE_EXISTS='test -f'           # Check if file exists
 EXAMINE_DIR_EXISTS='test -d'            # Check if directory exists
-EXAMINE_LINK_TARGET='readlink'          # Read symlink target
+EXAMINE_LINK_TARGET='readlink'
+EXAMINE_FILE_SHA256='sha256_q'          # Read symlink target
 
 # =============================================================================
 # FILESYSTEM - Modification (state-changing)

@@ -1,0 +1,7 @@
+tar -cf - -C "$b" -I /dev/stdin | gzip -n > "$a"
+# The packing template for 'bundle' on OpenBSD: its tar reads the file list
+# with -I <file>, not -T; the list on stdin is /dev/stdin. The ownership
+# stays as recorded (no owner options).
+#
+# Variables bound by the pack script: a = the archive path, b = the database
+# (the base of the relative paths); the list of relative paths comes on stdin.

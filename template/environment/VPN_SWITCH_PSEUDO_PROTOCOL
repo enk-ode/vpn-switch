@@ -1,4 +1,4 @@
-session environment
+session environment openpgp provenance export
 # VPN_SWITCH_PSEUDO_PROTOCOL - Space-separated list of pseudo-protocol directories
 #
 # Pseudo-protocols are top-level directories in VPN_SWITCH_BASE that are NOT

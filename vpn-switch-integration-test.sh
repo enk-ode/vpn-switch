@@ -1,17 +1,17 @@
 #!/bin/sh
 # vpn-switch-integration-test.sh - User Story Integration Tests
 # === AUTO-GENERATED METADATA (make metadata) ===
-# Generated: 2026-09-16 07:05:01
+# Generated: 2026-10-05 19:15:02
 # Terminal functions (single underscore): output shell commands
 # Combinator functions (double underscore): output single vpn-switch command
 # Batch-combinator functions (triple underscore): output multiple vpn-switch commands
-TERMINAL_FUNCTIONS="_error1 _error2 _error3 _fail2 _log1 _log2 _log3  _lift1 _database_init0 _environment_init1 _environment_cache1 _lift3 _setenv2 _getenv1 _unsetenv1 _cat1 _batch2 _printenv0 _env_sync0 _version_sync0 _version0 _link2 _remove1 _status0 _help0 _help1 _help2 _complete0 _complete1 _complete2 _complete3 _complete4 _complete5 _complete6 _helpenv0 _helpenv2 _database_enumerate0 _system_inspect0 _logs_inspect0 _phases_inspect0 _summary_inspect0 _prologue_inspect0 _openvpn_patch2 _openvpn_configure1 _openvpn_connect1 _openvpn_disconnect1 _openvpn_patch1 _openvpn_enumerate0 _openvpn_import1 _openvpn_list0 _openvpn_list1 _openvpn_add1 _openvpn_add3 _openvpn_link2 _openvpn_remove1 _openvpn_remove2 _openvpn_validate0 _openvpn_info1 _phases_copy0 _session_list0 _session_show1 _session_remove1 _session_connect1 _session_save0 _session_save1 _session_clean0 _session_refresh0 _session_validate0 _session_enumerate0 _session_describe0 _session_create1 _interface_destroy1 _session_populate3 _logs_validate0 _logs_clean0 _phases_validate0 _database_validate0 _binaries_validate0 _network_validate0 _permissions_validate0 _environment_validate0 _install_validate0 _version_validate0 _sudo_validate0 _wireguard_patch2 _wireguard_configure1 _wireguard_connect1 _wireguard_disconnect1 _wireguard_enumerate0 _wireguard_import1 _wireguard_list0 _wireguard_list1 _wireguard_add1 _wireguard_add3 _wireguard_link2 _wireguard_remove1 _wireguard_remove2 _wireguard_validate0 _wireguard_patch1 _wireguard_info1"
-COMBINATOR_FUNCTIONS="__bootstrap1 __environment_cache0 __phases_lift1 __init0 __batch1 __restore1 __import1 __helpenv1 __setintp2 __getintp1 __helpintp1 __helpintp2 __openvpn_start0 __openvpn_start1 __openvpn_stop1 __openvpn_add2 __openvpn_help0 __session_disconnect1 __session_stop1 __session_show0 __session_start0 __session_start1 __session_help0 __session_exists1 __session_conflicts2 __interface_check1 __stop1 __start1 __start0 __wireguard_start0 __wireguard_start1 __wireguard_stop1 __wireguard_add2 __wireguard_help0"
-BATCH_COMBINATOR_FUNCTIONS="___bootstrap2 ___init1 ___dumpenv1 ___dump0 ___batch0 ___sync0 ___list0 ___environment_inspect0 ___inspect0 ___openvpn_create1 ___openvpn_stop0 ___openvpn_inspect0 ___openvpn_clean0 ___openvpn_dump0 ___phases_sync1 ___phases_sync0 ___session_stop0 ___session_switch1 ___session_switch2 ___session_dump0 ___session_inspect0 ___session_prepare3 ___stop0 ___validate0 ___wireguard_create1 ___wireguard_inspect0 ___wireguard_stop0 ___wireguard_clean0 ___wireguard_clean1 ___wireguard_dump0"
-ANCHOR_FUNCTIONS="_error1 _error2 _error3 _fail2 _log1 _log2 _log3  _lift1 _database_init0 _environment_init1 _environment_cache1 _lift3 _setenv2 _getenv1 _unsetenv1 _cat1 _batch2 _printenv0 _env_sync0 _version_sync0 _version0 _link2 _remove1 _status0 _help0 _help1 _help2 _complete0 _complete1 _complete2 _complete3 _complete4 _complete5 _complete6 _helpenv0 _helpenv2 _database_enumerate0 _system_inspect0 _logs_inspect0 _phases_inspect0 _summary_inspect0 _prologue_inspect0 _openvpn_patch2 _openvpn_configure1 _openvpn_connect1 _openvpn_disconnect1 _openvpn_patch1 _openvpn_enumerate0 _openvpn_import1 _openvpn_list0 _openvpn_list1 _openvpn_add1 _openvpn_add3 _openvpn_link2 _openvpn_remove1 _openvpn_remove2 _openvpn_validate0 _openvpn_info1 _phases_copy0 _session_list0 _session_show1 _session_remove1 _session_connect1 _session_save0 _session_save1 _session_clean0 _session_refresh0 _session_validate0 _session_enumerate0 _session_describe0 _session_create1 _interface_destroy1 _session_populate3 _logs_validate0 _logs_clean0 _phases_validate0 _database_validate0 _binaries_validate0 _network_validate0 _permissions_validate0 _environment_validate0 _install_validate0 _version_validate0 _sudo_validate0 _wireguard_patch2 _wireguard_configure1 _wireguard_connect1 _wireguard_disconnect1 _wireguard_enumerate0 _wireguard_import1 _wireguard_list0 _wireguard_list1 _wireguard_add1 _wireguard_add3 _wireguard_link2 _wireguard_remove1 _wireguard_remove2 _wireguard_validate0 _wireguard_patch1 _wireguard_info1   __bootstrap1 __environment_cache0 __phases_lift1 __init0 __batch1 __restore1 __import1 __helpenv1 __setintp2 __getintp1 __helpintp1 __helpintp2 __openvpn_start0 __openvpn_start1 __openvpn_stop1 __openvpn_add2 __openvpn_help0 __session_disconnect1 __session_stop1 __session_show0 __session_start0 __session_start1 __session_help0 __session_exists1 __session_conflicts2 __interface_check1 __stop1 __start1 __start0 __wireguard_start0 __wireguard_start1 __wireguard_stop1 __wireguard_add2 __wireguard_help0   ___bootstrap2 ___init1 ___dumpenv1 ___dump0 ___batch0 ___sync0 ___list0 ___environment_inspect0 ___inspect0 ___openvpn_create1 ___openvpn_stop0 ___openvpn_inspect0 ___openvpn_clean0 ___openvpn_dump0 ___phases_sync1 ___phases_sync0 ___session_stop0 ___session_switch1 ___session_switch2 ___session_dump0 ___session_inspect0 ___session_prepare3 ___stop0 ___validate0 ___wireguard_create1 ___wireguard_inspect0 ___wireguard_stop0 ___wireguard_clean0 ___wireguard_clean1 ___wireguard_dump0"
+TERMINAL_FUNCTIONS="_comment1 _note1 _error1 _error2 _error3 _fail2 _log1 _log2 _log3  _wireguard_collect0 _openvpn_collect0 _dump_header1 _restore_prune2 _filter_write3 _bundle_pack2 _seal_write2 _incoming_remove1 _extract_unpack2 _attest_sign2 _lift1 _database_init0 _environment_init1 _environment_cache1 _lift3 _setenv2 _getenv1 _unsetenv1 _cat1 _batch2 _printenv0 _env_sync0 _version_sync0 _version0 _link2 _remove1 _status0 _help0 _help1 _help2 _complete0 _complete1 _complete2 _complete3 _complete4 _complete5 _complete6 _helpenv0 _helpenv2 _database_enumerate0 _system_inspect0 _logs_inspect0 _phases_inspect0 _summary_inspect0 _prologue_inspect0 _key_import_copy3 _key_collect_files2 _manifest_write2 _openpgp_record2 _openpgp_record3 _openpgp_prerequisites0 _openvpn_patch2 _openvpn_configure1 _openvpn_connect1 _openvpn_disconnect1 _openvpn_patch1 _openvpn_enumerate0 _openvpn_import1 _openvpn_list0 _openvpn_list1 _openvpn_add1 _openvpn_add3 _openvpn_link2 _openvpn_remove1 _openvpn_remove2 _openvpn_validate0 _openvpn_info1 _phases_copy0 _provenance_serial1 _provenance_file5 _provenance_import_copy2 _provenance_collect0 _provenance_list1 _session_list0 _session_show1 _session_remove1 _session_connect1 _session_save0 _session_save1 _session_clean0 _session_refresh0 _session_validate0 _session_enumerate0 _session_describe0 _session_create1 _interface_destroy1 _session_populate3 _logs_validate0 _logs_clean0 _phases_validate0 _database_validate0 _binaries_validate0 _network_validate0 _permissions_validate0 _environment_validate0 _install_validate0 _version_validate0 _sudo_validate0 _wireguard_patch2 _wireguard_configure1 _wireguard_connect1 _wireguard_disconnect1 _wireguard_enumerate0 _wireguard_import1 _wireguard_list0 _wireguard_list1 _wireguard_add1 _wireguard_add3 _wireguard_link2 _wireguard_remove1 _wireguard_remove2 _wireguard_validate0 _wireguard_patch1 _wireguard_info1"
+COMBINATOR_FUNCTIONS="__export3 __export2 __export_redacted2 __export_full2 __export_minimized2 __export_pair3 __dump_readable1 __archive_key_pinned0 __restore1 __restore2 __restore_v12 __restore_v13 __restore_v14 __restore_v15 __restore3 __restore_serial_admissible3 __restore_base_exists1 __restore_replay2 __filter2 __filter_default2 __filter3 __filter_redacted2 __filter_full2 __filter_minimized2 __collection_readable1 __archiver_set0 __bundle_archive_absolute1 __bundle_manifest_beside1 __bundle_collection_inside1 __bundle_readable1 __seal_absent1 __attest_absent1 __seal_present1 __seal_matches2 __incoming_clear1 __extractor_set0 __extract_destination_absolute1 __extract_destination_empty1 __import2 __import_bootstrap2 __import3 __import4 __import5 __import6 __attest_file_exists1 __openpgp_record_complete1 __attest_signer_pinned2 __bootstrap1 __environment_cache0 __phases_lift1 __init0 __dump0 __batch1 __import1 __helpenv1 __setintp2 __getintp1 __helpintp1 __helpintp2 __key_name_valid1 __base_element_exists1 __key_record_exists2 __manifest_named1 __manifest_entries_hashable1 __manifest_readable1 __manifest_base_exists1 __manifest_tree_matches2 __openpgp_keyid_valid1 __openpgp_import2 __openpgp_collect1 __openvpn_start0 __openvpn_start1 __openvpn_stop1 __openvpn_add2 __openvpn_help0 __provenance_serial0 __provenance_add2 __provenance_add3 __provenance_add4 __provenance_add5 __provenance_add6 __provenance_bundle_readable1 __provenance_receipt5 __provenance_receipt_same3 __provenance_id_valid1 __provenance_import_place2 __provenance_list0 __session_disconnect1 __session_stop1 __session_show0 __session_start0 __session_start1 __session_help0 __session_exists1 __session_conflicts2 __interface_check1 __stop1 __start1 __start0 __wireguard_start0 __wireguard_start1 __wireguard_stop1 __wireguard_add2 __wireguard_help0"
+BATCH_COMBINATOR_FUNCTIONS="___collect0 ___export_pair4 ___restore_v16 ___bundle2 ___seal2 ___seal_verify2 ___extract2 ___import_bootstrap5 ___import_bootstrap6 ___import7 ___attest2 ___attest_verify2 ___bootstrap2 ___environment_refresh0 ___init1 ___dumpenv1 ___dump1 ___batch0 ___sync0 ___list0 ___environment_inspect0 ___inspect0 ___key_import3 ___manifest2 ___manifest_attest2 ___manifest_verify3 ___manifest_match2 ___openpgp_add2 ___openpgp_add3 ___openpgp_dump0 ___openpgp_collect0 ___openvpn_create1 ___openvpn_stop0 ___openvpn_inspect0 ___openvpn_clean0 ___openvpn_dump0 ___phases_sync1 ___phases_sync0 ___provenance_add7 ___provenance_import2 ___provenance_dump0 ___session_stop0 ___session_switch1 ___session_switch2 ___session_dump0 ___session_inspect0 ___session_prepare3 ___stop0 ___validate0 ___wireguard_create1 ___wireguard_inspect0 ___wireguard_stop0 ___wireguard_clean0 ___wireguard_clean1 ___wireguard_dump0"
+ANCHOR_FUNCTIONS="_comment1 _note1 _error1 _error2 _error3 _fail2 _log1 _log2 _log3  _wireguard_collect0 _openvpn_collect0 _dump_header1 _restore_prune2 _filter_write3 _bundle_pack2 _seal_write2 _incoming_remove1 _extract_unpack2 _attest_sign2 _lift1 _database_init0 _environment_init1 _environment_cache1 _lift3 _setenv2 _getenv1 _unsetenv1 _cat1 _batch2 _printenv0 _env_sync0 _version_sync0 _version0 _link2 _remove1 _status0 _help0 _help1 _help2 _complete0 _complete1 _complete2 _complete3 _complete4 _complete5 _complete6 _helpenv0 _helpenv2 _database_enumerate0 _system_inspect0 _logs_inspect0 _phases_inspect0 _summary_inspect0 _prologue_inspect0 _key_import_copy3 _key_collect_files2 _manifest_write2 _openpgp_record2 _openpgp_record3 _openpgp_prerequisites0 _openvpn_patch2 _openvpn_configure1 _openvpn_connect1 _openvpn_disconnect1 _openvpn_patch1 _openvpn_enumerate0 _openvpn_import1 _openvpn_list0 _openvpn_list1 _openvpn_add1 _openvpn_add3 _openvpn_link2 _openvpn_remove1 _openvpn_remove2 _openvpn_validate0 _openvpn_info1 _phases_copy0 _provenance_serial1 _provenance_file5 _provenance_import_copy2 _provenance_collect0 _provenance_list1 _session_list0 _session_show1 _session_remove1 _session_connect1 _session_save0 _session_save1 _session_clean0 _session_refresh0 _session_validate0 _session_enumerate0 _session_describe0 _session_create1 _interface_destroy1 _session_populate3 _logs_validate0 _logs_clean0 _phases_validate0 _database_validate0 _binaries_validate0 _network_validate0 _permissions_validate0 _environment_validate0 _install_validate0 _version_validate0 _sudo_validate0 _wireguard_patch2 _wireguard_configure1 _wireguard_connect1 _wireguard_disconnect1 _wireguard_enumerate0 _wireguard_import1 _wireguard_list0 _wireguard_list1 _wireguard_add1 _wireguard_add3 _wireguard_link2 _wireguard_remove1 _wireguard_remove2 _wireguard_validate0 _wireguard_patch1 _wireguard_info1   __export3 __export2 __export_redacted2 __export_full2 __export_minimized2 __export_pair3 __dump_readable1 __archive_key_pinned0 __restore1 __restore2 __restore_v12 __restore_v13 __restore_v14 __restore_v15 __restore3 __restore_serial_admissible3 __restore_base_exists1 __restore_replay2 __filter2 __filter_default2 __filter3 __filter_redacted2 __filter_full2 __filter_minimized2 __collection_readable1 __archiver_set0 __bundle_archive_absolute1 __bundle_manifest_beside1 __bundle_collection_inside1 __bundle_readable1 __seal_absent1 __attest_absent1 __seal_present1 __seal_matches2 __incoming_clear1 __extractor_set0 __extract_destination_absolute1 __extract_destination_empty1 __import2 __import_bootstrap2 __import3 __import4 __import5 __import6 __attest_file_exists1 __openpgp_record_complete1 __attest_signer_pinned2 __bootstrap1 __environment_cache0 __phases_lift1 __init0 __dump0 __batch1 __import1 __helpenv1 __setintp2 __getintp1 __helpintp1 __helpintp2 __key_name_valid1 __base_element_exists1 __key_record_exists2 __manifest_named1 __manifest_entries_hashable1 __manifest_readable1 __manifest_base_exists1 __manifest_tree_matches2 __openpgp_keyid_valid1 __openpgp_import2 __openpgp_collect1 __openvpn_start0 __openvpn_start1 __openvpn_stop1 __openvpn_add2 __openvpn_help0 __provenance_serial0 __provenance_add2 __provenance_add3 __provenance_add4 __provenance_add5 __provenance_add6 __provenance_bundle_readable1 __provenance_receipt5 __provenance_receipt_same3 __provenance_id_valid1 __provenance_import_place2 __provenance_list0 __session_disconnect1 __session_stop1 __session_show0 __session_start0 __session_start1 __session_help0 __session_exists1 __session_conflicts2 __interface_check1 __stop1 __start1 __start0 __wireguard_start0 __wireguard_start1 __wireguard_stop1 __wireguard_add2 __wireguard_help0   ___collect0 ___export_pair4 ___restore_v16 ___bundle2 ___seal2 ___seal_verify2 ___extract2 ___import_bootstrap5 ___import_bootstrap6 ___import7 ___attest2 ___attest_verify2 ___bootstrap2 ___environment_refresh0 ___init1 ___dumpenv1 ___dump1 ___batch0 ___sync0 ___list0 ___environment_inspect0 ___inspect0 ___key_import3 ___manifest2 ___manifest_attest2 ___manifest_verify3 ___manifest_match2 ___openpgp_add2 ___openpgp_add3 ___openpgp_dump0 ___openpgp_collect0 ___openvpn_create1 ___openvpn_stop0 ___openvpn_inspect0 ___openvpn_clean0 ___openvpn_dump0 ___phases_sync1 ___phases_sync0 ___provenance_add7 ___provenance_import2 ___provenance_dump0 ___session_stop0 ___session_switch1 ___session_switch2 ___session_dump0 ___session_inspect0 ___session_prepare3 ___stop0 ___validate0 ___wireguard_create1 ___wireguard_inspect0 ___wireguard_stop0 ___wireguard_clean0 ___wireguard_clean1 ___wireguard_dump0"
 # Function-to-module mapping (format: "func:module.sh func:module.sh ...")
 # Used by process_arguments() for deterministic module loading
-FUNCTION_MODULES="__bootstrap1:database.sh ___bootstrap2:database.sh _lift1:database.sh _database_init0:database.sh _environment_init1:database.sh __environment_cache0:database.sh _environment_cache1:database.sh _lift3:database.sh __phases_lift1:database.sh ___init1:database.sh __init0:database.sh _setenv2:database.sh _getenv1:database.sh _unsetenv1:database.sh ___dumpenv1:database.sh ___dump0:database.sh _cat1:database.sh ___batch0:database.sh __batch1:database.sh _batch2:database.sh __restore1:database.sh _printenv0:database.sh ___sync0:database.sh _env_sync0:database.sh _version_sync0:database.sh _version0:database.sh __import1:database.sh ___list0:database.sh _link2:database.sh _remove1:database.sh _status0:help.sh _help0:help.sh _help1:help.sh _help2:help.sh _complete0:help.sh _complete1:help.sh _complete2:help.sh _complete3:help.sh _complete4:help.sh _complete5:help.sh _complete6:help.sh _helpenv0:helpenv.sh __helpenv1:helpenv.sh _helpenv2:helpenv.sh __setintp2:helpenv.sh __getintp1:helpenv.sh __helpintp1:helpenv.sh __helpintp2:helpenv.sh _database_enumerate0:inspect.sh ___environment_inspect0:inspect.sh _system_inspect0:inspect.sh _logs_inspect0:inspect.sh _phases_inspect0:inspect.sh _summary_inspect0:inspect.sh _prologue_inspect0:inspect.sh ___inspect0:inspect.sh __openvpn_start0:openvpn.sh __openvpn_start1:openvpn.sh ___openvpn_create1:openvpn.sh _openvpn_patch2:openvpn.sh _openvpn_configure1:openvpn.sh _openvpn_connect1:openvpn.sh ___openvpn_stop0:openvpn.sh __openvpn_stop1:openvpn.sh _openvpn_disconnect1:openvpn.sh _openvpn_patch1:openvpn.sh ___openvpn_inspect0:openvpn.sh _openvpn_enumerate0:openvpn.sh _openvpn_import1:openvpn.sh _openvpn_list0:openvpn.sh _openvpn_list1:openvpn.sh _openvpn_add1:openvpn.sh __openvpn_add2:openvpn.sh _openvpn_add3:openvpn.sh _openvpn_link2:openvpn.sh _openvpn_remove1:openvpn.sh _openvpn_remove2:openvpn.sh _openvpn_validate0:openvpn.sh ___openvpn_clean0:openvpn.sh _openvpn_info1:openvpn.sh ___openvpn_dump0:openvpn.sh __openvpn_help0:openvpn.sh _phases_copy0:phase.sh ___phases_sync1:phase.sh ___phases_sync0:phase.sh __session_disconnect1:session.sh ___session_stop0:session.sh __session_stop1:session.sh _session_list0:session.sh __session_show0:session.sh _session_show1:session.sh _session_remove1:session.sh __session_start0:session.sh __session_start1:session.sh ___session_switch1:session.sh ___session_switch2:session.sh _session_connect1:session.sh _session_save0:session.sh _session_save1:session.sh _session_clean0:session.sh _session_refresh0:session.sh _session_validate0:session.sh ___session_dump0:session.sh __session_help0:session.sh ___session_inspect0:session.sh _session_enumerate0:session.sh _session_describe0:session.sh _session_create1:session.sh __session_exists1:session.sh __session_conflicts2:session.sh _interface_destroy1:session.sh __interface_check1:session.sh ___session_prepare3:session.sh _session_populate3:session.sh ___stop0:session.sh __stop1:session.sh __start1:session.sh __start0:session.sh _logs_validate0:validate.sh _logs_clean0:validate.sh _phases_validate0:validate.sh _database_validate0:validate.sh _binaries_validate0:validate.sh _network_validate0:validate.sh _permissions_validate0:validate.sh _environment_validate0:validate.sh _install_validate0:validate.sh _version_validate0:validate.sh _sudo_validate0:validate.sh ___validate0:validate.sh __wireguard_start0:wireguard.sh __wireguard_start1:wireguard.sh ___wireguard_create1:wireguard.sh _wireguard_patch2:wireguard.sh _wireguard_configure1:wireguard.sh _wireguard_connect1:wireguard.sh _wireguard_disconnect1:wireguard.sh ___wireguard_inspect0:wireguard.sh _wireguard_enumerate0:wireguard.sh ___wireguard_stop0:wireguard.sh __wireguard_stop1:wireguard.sh _wireguard_import1:wireguard.sh _wireguard_list0:wireguard.sh _wireguard_list1:wireguard.sh _wireguard_add1:wireguard.sh __wireguard_add2:wireguard.sh _wireguard_add3:wireguard.sh _wireguard_link2:wireguard.sh _wireguard_remove1:wireguard.sh _wireguard_remove2:wireguard.sh _wireguard_validate0:wireguard.sh ___wireguard_clean0:wireguard.sh ___wireguard_clean1:wireguard.sh _wireguard_patch1:wireguard.sh _wireguard_info1:wireguard.sh ___wireguard_dump0:wireguard.sh __wireguard_help0:wireguard.sh"
+FUNCTION_MODULES="___collect0:archive.sh _wireguard_collect0:archive.sh _openvpn_collect0:archive.sh __export3:archive.sh __export2:archive.sh __export_redacted2:archive.sh __export_full2:archive.sh __export_minimized2:archive.sh __export_pair3:archive.sh ___export_pair4:archive.sh _dump_header1:archive.sh __dump_readable1:archive.sh __archive_key_pinned0:archive.sh __restore1:archive.sh __restore2:archive.sh __restore_v12:archive.sh __restore_v13:archive.sh __restore_v14:archive.sh __restore_v15:archive.sh ___restore_v16:archive.sh _restore_prune2:archive.sh __restore3:archive.sh __restore_serial_admissible3:archive.sh __restore_base_exists1:archive.sh __restore_replay2:archive.sh __filter2:archive.sh __filter_default2:archive.sh __filter3:archive.sh __filter_redacted2:archive.sh __filter_full2:archive.sh __filter_minimized2:archive.sh _filter_write3:archive.sh ___bundle2:archive.sh __collection_readable1:archive.sh __archiver_set0:archive.sh __bundle_archive_absolute1:archive.sh __bundle_manifest_beside1:archive.sh __bundle_collection_inside1:archive.sh _bundle_pack2:archive.sh ___seal2:archive.sh __bundle_readable1:archive.sh __seal_absent1:archive.sh __attest_absent1:archive.sh _seal_write2:archive.sh ___seal_verify2:archive.sh __seal_present1:archive.sh __seal_matches2:archive.sh __incoming_clear1:archive.sh _incoming_remove1:archive.sh ___extract2:archive.sh __extractor_set0:archive.sh __extract_destination_absolute1:archive.sh __extract_destination_empty1:archive.sh _extract_unpack2:archive.sh __import2:archive.sh __import_bootstrap2:archive.sh ___import_bootstrap5:archive.sh ___import_bootstrap6:archive.sh __import3:archive.sh __import4:archive.sh __import5:archive.sh __import6:archive.sh ___import7:archive.sh ___attest2:attest.sh __attest_file_exists1:attest.sh __openpgp_record_complete1:attest.sh _attest_sign2:attest.sh ___attest_verify2:attest.sh __attest_signer_pinned2:attest.sh __bootstrap1:database.sh ___bootstrap2:database.sh _lift1:database.sh _database_init0:database.sh _environment_init1:database.sh ___environment_refresh0:database.sh __environment_cache0:database.sh _environment_cache1:database.sh _lift3:database.sh __phases_lift1:database.sh ___init1:database.sh __init0:database.sh _setenv2:database.sh _getenv1:database.sh _unsetenv1:database.sh ___dumpenv1:database.sh __dump0:database.sh ___dump1:database.sh _cat1:database.sh ___batch0:database.sh __batch1:database.sh _batch2:database.sh _printenv0:database.sh ___sync0:database.sh _env_sync0:database.sh _version_sync0:database.sh _version0:database.sh __import1:database.sh ___list0:database.sh _link2:database.sh _remove1:database.sh _status0:help.sh _help0:help.sh _help1:help.sh _help2:help.sh _complete0:help.sh _complete1:help.sh _complete2:help.sh _complete3:help.sh _complete4:help.sh _complete5:help.sh _complete6:help.sh _helpenv0:helpenv.sh __helpenv1:helpenv.sh _helpenv2:helpenv.sh __setintp2:helpenv.sh __getintp1:helpenv.sh __helpintp1:helpenv.sh __helpintp2:helpenv.sh _database_enumerate0:inspect.sh ___environment_inspect0:inspect.sh _system_inspect0:inspect.sh _logs_inspect0:inspect.sh _phases_inspect0:inspect.sh _summary_inspect0:inspect.sh _prologue_inspect0:inspect.sh ___inspect0:inspect.sh __key_name_valid1:keys.sh ___key_import3:keys.sh __base_element_exists1:keys.sh _key_import_copy3:keys.sh _key_collect_files2:keys.sh __key_record_exists2:keys.sh ___manifest2:manifest.sh __manifest_named1:manifest.sh __manifest_entries_hashable1:manifest.sh _manifest_write2:manifest.sh ___manifest_attest2:manifest.sh ___manifest_verify3:manifest.sh ___manifest_match2:manifest.sh __manifest_readable1:manifest.sh __manifest_base_exists1:manifest.sh __manifest_tree_matches2:manifest.sh ___openpgp_add2:openpgp.sh ___openpgp_add3:openpgp.sh __openpgp_keyid_valid1:openpgp.sh _openpgp_record2:openpgp.sh _openpgp_record3:openpgp.sh _openpgp_prerequisites0:openpgp.sh ___openpgp_dump0:openpgp.sh __openpgp_import2:openpgp.sh ___openpgp_collect0:openpgp.sh __openpgp_collect1:openpgp.sh __openvpn_start0:openvpn.sh __openvpn_start1:openvpn.sh ___openvpn_create1:openvpn.sh _openvpn_patch2:openvpn.sh _openvpn_configure1:openvpn.sh _openvpn_connect1:openvpn.sh ___openvpn_stop0:openvpn.sh __openvpn_stop1:openvpn.sh _openvpn_disconnect1:openvpn.sh _openvpn_patch1:openvpn.sh ___openvpn_inspect0:openvpn.sh _openvpn_enumerate0:openvpn.sh _openvpn_import1:openvpn.sh _openvpn_list0:openvpn.sh _openvpn_list1:openvpn.sh _openvpn_add1:openvpn.sh __openvpn_add2:openvpn.sh _openvpn_add3:openvpn.sh _openvpn_link2:openvpn.sh _openvpn_remove1:openvpn.sh _openvpn_remove2:openvpn.sh _openvpn_validate0:openvpn.sh ___openvpn_clean0:openvpn.sh _openvpn_info1:openvpn.sh ___openvpn_dump0:openvpn.sh __openvpn_help0:openvpn.sh _phases_copy0:phase.sh ___phases_sync1:phase.sh ___phases_sync0:phase.sh __provenance_serial0:provenance.sh _provenance_serial1:provenance.sh __provenance_add2:provenance.sh __provenance_add3:provenance.sh __provenance_add4:provenance.sh __provenance_add5:provenance.sh __provenance_add6:provenance.sh ___provenance_add7:provenance.sh __provenance_bundle_readable1:provenance.sh __provenance_receipt5:provenance.sh __provenance_receipt_same3:provenance.sh _provenance_file5:provenance.sh ___provenance_import2:provenance.sh __provenance_id_valid1:provenance.sh __provenance_import_place2:provenance.sh _provenance_import_copy2:provenance.sh ___provenance_dump0:provenance.sh _provenance_collect0:provenance.sh __provenance_list0:provenance.sh _provenance_list1:provenance.sh __session_disconnect1:session.sh ___session_stop0:session.sh __session_stop1:session.sh _session_list0:session.sh __session_show0:session.sh _session_show1:session.sh _session_remove1:session.sh __session_start0:session.sh __session_start1:session.sh ___session_switch1:session.sh ___session_switch2:session.sh _session_connect1:session.sh _session_save0:session.sh _session_save1:session.sh _session_clean0:session.sh _session_refresh0:session.sh _session_validate0:session.sh ___session_dump0:session.sh __session_help0:session.sh ___session_inspect0:session.sh _session_enumerate0:session.sh _session_describe0:session.sh _session_create1:session.sh __session_exists1:session.sh __session_conflicts2:session.sh _interface_destroy1:session.sh __interface_check1:session.sh ___session_prepare3:session.sh _session_populate3:session.sh ___stop0:session.sh __stop1:session.sh __start1:session.sh __start0:session.sh _logs_validate0:validate.sh _logs_clean0:validate.sh _phases_validate0:validate.sh _database_validate0:validate.sh _binaries_validate0:validate.sh _network_validate0:validate.sh _permissions_validate0:validate.sh _environment_validate0:validate.sh _install_validate0:validate.sh _version_validate0:validate.sh _sudo_validate0:validate.sh ___validate0:validate.sh __wireguard_start0:wireguard.sh __wireguard_start1:wireguard.sh ___wireguard_create1:wireguard.sh _wireguard_patch2:wireguard.sh _wireguard_configure1:wireguard.sh _wireguard_connect1:wireguard.sh _wireguard_disconnect1:wireguard.sh ___wireguard_inspect0:wireguard.sh _wireguard_enumerate0:wireguard.sh ___wireguard_stop0:wireguard.sh __wireguard_stop1:wireguard.sh _wireguard_import1:wireguard.sh _wireguard_list0:wireguard.sh _wireguard_list1:wireguard.sh _wireguard_add1:wireguard.sh __wireguard_add2:wireguard.sh _wireguard_add3:wireguard.sh _wireguard_link2:wireguard.sh _wireguard_remove1:wireguard.sh _wireguard_remove2:wireguard.sh _wireguard_validate0:wireguard.sh ___wireguard_clean0:wireguard.sh ___wireguard_clean1:wireguard.sh _wireguard_patch1:wireguard.sh _wireguard_info1:wireguard.sh ___wireguard_dump0:wireguard.sh __wireguard_help0:wireguard.sh"
 # === END AUTO-GENERATED ===
 #
 # Philosophy: Test real user workflows end-to-end
@@ -225,7 +225,7 @@ extract_session_id() {
   echo "Called at: $(date)" >> /tmp/extract_session_id_debug.log
   echo "Input length: ${#output} chars" >> /tmp/extract_session_id_debug.log
   echo "First 500 chars of output:" >> /tmp/extract_session_id_debug.log
-  echo "$output" | head -c 500 >> /tmp/extract_session_id_debug.log
+  echo "$output" | dd bs=500 count=1 2>/dev/null >> /tmp/extract_session_id_debug.log
   echo "" >> /tmp/extract_session_id_debug.log
 
   # Parse session from output
@@ -397,12 +397,12 @@ create_test_config() {
 
   cat > "$filepath" <<EOF
 [Interface]
-PrivateKey = $(head -c 32 /dev/urandom | base64)
+PrivateKey = $(dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64)
 Address = 10.2.0.2/32
 DNS = 10.2.0.1
 
 [Peer]
-PublicKey = $(head -c 32 /dev/urandom | base64)
+PublicKey = $(dd if=/dev/urandom bs=32 count=1 2>/dev/null | base64)
 AllowedIPs = 0.0.0.0/0
 Endpoint = $endpoint
 EOF
@@ -492,7 +492,11 @@ run_vpn_switch() {
   LAST_TRACE_LABEL="$label"
 
   # Execute vpn-switch exactly as a user would
-  VPN_SWITCH_BASE="$basedir" $SCRIPT "$@"
+  # The root above the database is the story database itself (hidden, so
+  # no protocol): import unpacks under <root>/incoming/<bundle>, and the
+  # stories run in parallel under the one /tmp -- a shared root would let
+  # them clear each other's unpacked bundle mid-import
+  VPN_SWITCH_BASE="$basedir" VPN_SWITCH_ROOT="$basedir/.root" $SCRIPT "$@"
 }
 
 # run_vpn_dump "003" - Execute vpn-switch dump with batch2 in output mode
@@ -525,6 +529,25 @@ run_vpn_dump() {
   # Remove temporary settings via API to allow restore to use default (execute mode)
   VPN_SWITCH_BASE="$basedir" $SCRIPT unsetenv VPN_SWITCH_INTERPRETER_batch2 > /dev/null 2>&1
   VPN_SWITCH_BASE="$basedir" $SCRIPT unsetenv VPN_SWITCH_INTERPRETER_dumpenv > /dev/null 2>&1
+}
+
+# story_attest_key <db> <record> - the throwaway OpenPGP key a story signs
+# with: generated once per run in a home short enough for gpg-agent's
+# socket (/tmp), registered in <db> as an openpgp record and pinned as the
+# archive attest key. A story that moves a database between two databases
+# calls it for both (the receiver pins the sender's key). Sets STORY_FPR.
+STORY_GNUPGHOME="/tmp/vsit-gh-$$"
+STORY_FPR=""
+story_attest_key() {
+  local db="$1" rec="$2"
+  if [ -z "$STORY_FPR" ]; then
+    mkdir -p "$STORY_GNUPGHOME" && chmod 700 "$STORY_GNUPGHOME"
+    GNUPGHOME="$STORY_GNUPGHOME" gpg --batch --passphrase '' --pinentry-mode loopback \
+      --quick-generate-key "Story <story@example.invalid>" rsa2048 sign never > /dev/null 2>&1
+    STORY_FPR=$(GNUPGHOME="$STORY_GNUPGHOME" gpg --list-secret-keys --with-colons 2>/dev/null | awk -F: '/^fpr:/{print $10; exit}')
+  fi
+  VPN_SWITCH_BASE="$db" $SCRIPT openpgp add "$rec" "$STORY_FPR" "$STORY_GNUPGHOME" > /dev/null 2>&1
+  VPN_SWITCH_BASE="$db" $SCRIPT setenv VPN_SWITCH_ARCHIVE_ATTEST_KEY "$rec" > /dev/null 2>&1
 }
 
 #-----------------------------------------------------------------------------
@@ -600,7 +623,9 @@ user_story_1_import_organize_dump_restore() {
   assert_symlink_target "$old_db/openvpn/office" "./us-server.ovpn" "OVPN: Protocol-level link: office"
   assert_symlink_target "$old_db/openvpn/work/primary" "../us-server.ovpn" "OVPN: Group link: work/primary"
 
-  # Step 5: Dump OLD database (both protocols)
+  # Step 5: Dump OLD database (both protocols) -- the attest key registered
+  # first, so the dump of OLD and the dump of NEW carry the same key record
+  story_attest_key "$old_db" story
   local dump1_stderr=$(mktemp)
   run_vpn_dump "018" "$old_db" > "$dump1" 2>"$dump1_stderr"
   assert_file_empty "$dump1_stderr" "Dump stderr is clean"
@@ -621,8 +646,19 @@ user_story_1_import_organize_dump_restore() {
   story_db "$new_db"
   bootstrap_database "$new_db"
 
-  # Step 7: Restore dump into NEW database
-  run_vpn_switch "019" "$new_db" restore "$dump1" > /dev/null 2>&1
+  # Step 7: The database travels as the signed pair -- export from OLD
+  # (dump + bundle, sealed and signed with the pinned key), import into NEW
+  # (the same key pinned there): a plain dump names its files, the bundle
+  # carries them; a dump without the pinned signature does not replay.
+  story_attest_key "$new_db" story
+  local pair_dump="$old_db/pair.sh" pair_bundle="$old_db/pair.tar.gz"
+  run_vpn_switch "019" "$old_db" export full "$pair_dump" "$pair_bundle" > /dev/null 2>&1
+  assert_file_exists "$pair_dump.asc" "Export: the dump is signed"
+  assert_file_exists "$pair_bundle" "Export: the bundle is written"
+  assert_contains "$(cat "$pair_dump")" "^# Bundle: sha256=" "Export: the dump is sealed to the bundle"
+  run_vpn_switch "019b" "$new_db" import "$pair_dump" "$pair_bundle" > /dev/null 2>&1
+  assert_dir_exists "$new_db/provenance" "Import: the receipt directory exists"
+  assert_contains "$(cat "$new_db"/provenance/*/signer 2>/dev/null)" "$STORY_FPR" "Import: the receipt names the pinned signer"
 
   # Step 8a: Verify NEW database matches OLD structure (WireGuard)
   assert_file_exists "$new_db/wireguard/wg-us-101.conf" "NEW WG: Config 1 imported"
@@ -652,12 +688,14 @@ user_story_1_import_organize_dump_restore() {
   # - Replace new_db paths with old_db paths
   # - Remove timestamp line (# Generated: ...) as it will differ
   # - Remove batch_id line (# Batch execution ...) as counter increments
-  grep -Ev "^# Generated:|^# Batch execution" "$dump1" > "$dump1.normalized"
-  sed -e "s,${new_db},${old_db},g" "$dump2" | grep -Ev "^# Generated:|^# Batch execution" > "$dump3"
+  # - Remove serial and base (the lineage continued in NEW, the base differs)
+  # - Remove the provenance block (NEW holds the receipt of this import, OLD none)
+  grep -Ev "^# Generated:|^# Batch execution|^# Serial:|^# Base:|provenance import|no receipts to dump" "$dump1" > "$dump1.normalized"
+  sed -e "s,${new_db},${old_db},g" "$dump2" | grep -Ev "^# Generated:|^# Batch execution|^# Serial:|^# Base:|provenance import|no receipts to dump" > "$dump3"
 
   # Compare normalized dumps - should be identical
   if diff -u "$dump1.normalized" "$dump3" > /dev/null 2>&1; then
-    pass "Idempotency: dump(restore(dump(OLD))) == dump(OLD) [multi-protocol]"
+    pass "Idempotency: dump(import(export(OLD))) == dump(OLD) [multi-protocol]"
   else
     fail "Idempotency: Dumps differ after restore" "Identical dumps" "See diff output"
     echo "${YELLOW}Diff output:${NC}"
@@ -688,6 +726,7 @@ user_story_2_session_management() {
 
   # Bootstrap OLD database
   bootstrap_database "$old_db"
+  story_attest_key "$old_db" story
 
   # Import configs for both protocols
   local wg_config=$(create_test_config "wg-test.conf")
@@ -737,10 +776,12 @@ user_story_2_session_management() {
   assert_file_empty "$dump_stderr" "Dump stderr is clean"
   rm -f "$dump_stderr"
 
-  # Session dumps now use feingranular commands instead of "start":
-  # session create, session populate, $protocol patch, $protocol configure, session save
-  assert_contains "$(cat "$dump_file")" "wireguard patch.*wg-test" "Dump contains WG session patch"
-  assert_contains "$(cat "$dump_file")" "openvpn patch.*vpn-test" "Dump contains OVPN session patch"
+  # A saved session travels as the user creates one: '<protocol> start <config>'
+  # then 'session save <name>', the connect terminals bound to cat around them
+  assert_contains "$(cat "$dump_file")" "wireguard start wg-test.conf" "Dump contains WG session start"
+  assert_contains "$(cat "$dump_file")" "openvpn start vpn-test.ovpn" "Dump contains OVPN session start"
+  assert_contains "$(cat "$dump_file")" "setenv VPN_SWITCH_INTERPRETER_wireguard_connect1 cat" "Dump guards the session block (connect bound to cat)"
+  assert_contains "$(cat "$dump_file")" "environment refresh" "Dump refreshes the environment after the pins of the session block"
   assert_contains "$(cat "$dump_file")" "session save work" "Dump contains WG save command"
   assert_contains "$(cat "$dump_file")" "session save home" "Dump contains OVPN save command"
 
@@ -748,27 +789,45 @@ user_story_2_session_management() {
   story_db "$new_db"
   bootstrap_database "$new_db"
 
-  # Restore
-  run_vpn_switch "028" "$new_db" restore "$dump_file" > /dev/null 2>&1
+  # The database travels as the signed pair (as in story 1): export from
+  # OLD, import into NEW with the same key pinned on both sides -- a plain
+  # dump names its files against the archive base, the bundle carries them
+  story_attest_key "$new_db" story
+  local pair_dump="$old_db/pair.sh" pair_bundle="$old_db/pair.tar.gz"
+  run_vpn_switch "027b" "$old_db" export full "$pair_dump" "$pair_bundle" > /dev/null 2>&1
+  local import_out
+  import_out=$(run_vpn_switch "028" "$new_db" import "$pair_dump" "$pair_bundle" 2>&1)
+  if ! printf '%s\n' "$import_out" | grep -q "^\(# \)\{0,1\}==> Phase: .* (execute)" \
+     && printf '%s\n' "$import_out" | grep -q '^echo "==> Phase: .* (execute)" >&2'; then
+    pass "NEW: the replay built the sessions and connected nothing -- the connect scripts were displayed, no phase ran (the pins of the session block held)"
+  else
+    fail "NEW: a phase ran during the replay (the pins of the session block did not hold)" "connect displayed" "$(printf '%s\n' "$import_out" | grep "==> Phase" | head -3 | tr '\n' ' ')"
+  fi
 
   # Verify configs were restored
   assert_file_exists "$new_db/wireguard/wg-test.conf" "NEW: WG config imported"
   assert_file_exists "$new_db/openvpn/vpn-test.ovpn" "NEW: OVPN config imported"
 
-  # Note: Session restoration creates the session via feingranular commands:
-  # session create, session populate, $protocol patch, $protocol configure, session save
-  # The actual session won't exist (no VPN started), but we verify the dump
-  # contained the right commands for both protocols
-  if grep -q "wireguard patch" "$dump_file" && grep -q "session save work" "$dump_file"; then
-    pass "NEW: WG session dump contains patch + save commands"
+  # The sessions exist in NEW as saved sessions (built, not connected):
+  # session list names them with their protocol and config
+  local new_sessions
+  new_sessions=$(run_vpn_switch "028b" "$new_db" session list 2>&1)
+  if printf '%s\n' "$new_sessions" | grep -q "work.*wireguard.*wg-test.conf"; then
+    pass "NEW: WG session work exists after import (start + save replayed)"
   else
-    fail "NEW: WG session dump missing commands" "patch + save" "$(grep -E 'wireguard.*patch|session.*save.*work' "$dump_file")"
+    fail "NEW: WG session work missing after import" "work  wireguard  wg-test.conf" "$new_sessions"
   fi
 
-  if grep -q "openvpn patch" "$dump_file" && grep -q "session save home" "$dump_file"; then
-    pass "NEW: OVPN session dump contains patch + save commands"
+  if printf '%s\n' "$new_sessions" | grep -q "home.*openvpn.*vpn-test.ovpn"; then
+    pass "NEW: OVPN session home exists after import (start + save replayed)"
   else
-    fail "NEW: OVPN session dump missing commands" "patch + save" "$(grep -E 'openvpn.*patch|session.*save.*home' "$dump_file")"
+    fail "NEW: OVPN session home missing after import" "home  openvpn  vpn-test.ovpn" "$new_sessions"
+  fi
+
+  if [ "$(ls -1 "$new_db/.session" 2>/dev/null | wc -l | tr -d ' ')" = "2" ]; then
+    pass "NEW: exactly two sessions were built, none connected"
+  else
+    fail "NEW: session count after import" "2" "$(ls -1 "$new_db/.session" 2>/dev/null | wc -l | tr -d ' ')"
   fi
 
   # Cleanup
@@ -996,19 +1055,19 @@ user_story_5_completeness_and_deletion_proof() {
   local cfg5=$(create_test_config "wg-au-505.conf" "au-505.vpn.com:51820")
 
   run_vpn_switch "067" "$test_db" wireguard import "$cfg1" > /dev/null 2>&1
-  echo "wireguard import \"$test_db/wireguard/wg-us-101.conf\"" >> "$transcript"
+  echo "wireguard import \"\$VPN_SWITCH_ARCHIVE_BASE/wireguard/wg-us-101.conf\"" >> "$transcript"
 
   run_vpn_switch "068" "$test_db" wireguard import "$cfg2" > /dev/null 2>&1
-  echo "wireguard import \"$test_db/wireguard/wg-uk-202.conf\"" >> "$transcript"
+  echo "wireguard import \"\$VPN_SWITCH_ARCHIVE_BASE/wireguard/wg-uk-202.conf\"" >> "$transcript"
 
   run_vpn_switch "069" "$test_db" wireguard import "$cfg3" > /dev/null 2>&1
-  echo "wireguard import \"$test_db/wireguard/wg-de-303.conf\"" >> "$transcript"
+  echo "wireguard import \"\$VPN_SWITCH_ARCHIVE_BASE/wireguard/wg-de-303.conf\"" >> "$transcript"
 
   run_vpn_switch "070" "$test_db" wireguard import "$cfg4" > /dev/null 2>&1
-  echo "wireguard import \"$test_db/wireguard/wg-jp-404.conf\"" >> "$transcript"
+  echo "wireguard import \"\$VPN_SWITCH_ARCHIVE_BASE/wireguard/wg-jp-404.conf\"" >> "$transcript"
 
   run_vpn_switch "071" "$test_db" wireguard import "$cfg5" > /dev/null 2>&1
-  echo "wireguard import \"$test_db/wireguard/wg-au-505.conf\"" >> "$transcript"
+  echo "wireguard import \"\$VPN_SWITCH_ARCHIVE_BASE/wireguard/wg-au-505.conf\"" >> "$transcript"
 
   # Import 3 OpenVPN configs (record commands)
   local ovpn1=$(create_test_ovpn_config "us-server.ovpn" "us-server.vpn.com 1194")
@@ -1016,13 +1075,13 @@ user_story_5_completeness_and_deletion_proof() {
   local ovpn3=$(create_test_ovpn_config "asia-server.ovpn" "asia-server.vpn.com 1194")
 
   run_vpn_switch "072" "$test_db" openvpn import "$ovpn1" > /dev/null 2>&1
-  echo "openvpn import \"$test_db/openvpn/us-server.ovpn\"" >> "$transcript"
+  echo "openvpn import \"\$VPN_SWITCH_ARCHIVE_BASE/openvpn/us-server.ovpn\"" >> "$transcript"
 
   run_vpn_switch "073" "$test_db" openvpn import "$ovpn2" > /dev/null 2>&1
-  echo "openvpn import \"$test_db/openvpn/eu-server.ovpn\"" >> "$transcript"
+  echo "openvpn import \"\$VPN_SWITCH_ARCHIVE_BASE/openvpn/eu-server.ovpn\"" >> "$transcript"
 
   run_vpn_switch "074" "$test_db" openvpn import "$ovpn3" > /dev/null 2>&1
-  echo "openvpn import \"$test_db/openvpn/asia-server.ovpn\"" >> "$transcript"
+  echo "openvpn import \"\$VPN_SWITCH_ARCHIVE_BASE/openvpn/asia-server.ovpn\"" >> "$transcript"
 
   # Create 3 WireGuard categories (record commands)
   run_vpn_switch "075" "$test_db" wireguard add privacy > /dev/null 2>&1
@@ -1264,6 +1323,7 @@ user_story_6_dump_quality_properties() {
   local test_db=$(mktemp -d "${TMPDIR:-/tmp}/vpn-quality-test.XXXXXX")
   story_db "$test_db"
   bootstrap_database "$test_db"
+  story_attest_key "$test_db" story
 
   # Create known transcript of operations
   local transcript=$(mktemp)
@@ -1401,10 +1461,16 @@ user_story_6_dump_quality_properties() {
   story_db "$new_db"
   bootstrap_database "$new_db"
 
-  if run_vpn_switch "114" "$new_db" restore "$dump_file" > /dev/null 2>&1; then
-    pass "Property 6: Dump is restorable (executable)"
+  # The database travels as the signed pair: the plain dump names its
+  # files against the archive base, the bundle carries them, the receiver
+  # pins the same key
+  story_attest_key "$new_db" story
+  local pair_dump="$test_db/pair.sh" pair_bundle="$test_db/pair.tar.gz"
+  run_vpn_switch "114a" "$test_db" export full "$pair_dump" "$pair_bundle" > /dev/null 2>&1
+  if run_vpn_switch "114" "$new_db" import "$pair_dump" "$pair_bundle" > /dev/null 2>&1; then
+    pass "Property 6: Dump is restorable (the pair imports)"
   else
-    fail "Property 6: Dump failed to restore" "Successful restore" "Restore failed"
+    fail "Property 6: Dump failed to restore" "Successful import" "Import failed"
   fi
 
   # Verify restored database has same structure
@@ -1426,8 +1492,10 @@ user_story_6_dump_quality_properties() {
   local dump1_normalized=$(mktemp)
   local dump2_normalized=$(mktemp)
 
-  grep -Ev "^# Generated:|^# Batch execution" "$dump_file" | sed -e "s|${test_db}|DB|g" > "$dump1_normalized"
-  grep -Ev "^# Generated:|^# Batch execution" "$dump2" | sed -e "s|${new_db}|DB|g" > "$dump2_normalized"
+  # Serial, base and the receipt differ by design: NEW continues the
+  # lineage and holds the receipt of this import
+  grep -Ev "^# Generated:|^# Batch execution|^# Serial:|^# Base:|provenance import|no receipts to dump" "$dump_file" | sed -e "s|${test_db}|DB|g" > "$dump1_normalized"
+  grep -Ev "^# Generated:|^# Batch execution|^# Serial:|^# Base:|provenance import|no receipts to dump" "$dump2" | sed -e "s|${new_db}|DB|g" > "$dump2_normalized"
 
   if diff -u "$dump1_normalized" "$dump2_normalized" > /dev/null 2>&1; then
     pass "Property 7: Normalized idempotency verified (dump(restore(dump)) == dump)"
@@ -1440,11 +1508,11 @@ user_story_6_dump_quality_properties() {
   #---------------------------------------------------------------------------
   # Property 8: No duplicate lines (exclude blank lines, comments, and setenv)
   #---------------------------------------------------------------------------
-  # Note: setenv duplicates are expected (prologue + epilogue both set env vars)
+  # Note: setenv and environment refresh appear twice by design (prologue and epilogue)
   # Only check for duplicates in protocol commands (import, add, link)
 
-  local total_lines=$(grep -v '^[ \t]*$' "$dump_file" | grep -v '#' | grep -v 'setenv' | wc -l | tr -d ' ')
-  local unique_lines=$(grep -v '^[ \t]*$' "$dump_file" | grep -v '#' | grep -v 'setenv' | sort -u | wc -l | tr -d ' ')
+  local total_lines=$(grep -v '^[ \t]*$' "$dump_file" | grep -v '#' | grep -v 'setenv' | grep -v 'environment refresh' | wc -l | tr -d ' ')
+  local unique_lines=$(grep -v '^[ \t]*$' "$dump_file" | grep -v '#' | grep -v 'setenv' | grep -v 'environment refresh' | sort -u | wc -l | tr -d ' ')
 
   if [ "$total_lines" = "$unique_lines" ]; then
     pass "Property 8: No duplicate protocol commands in dump ($total_lines unique)"
@@ -2649,18 +2717,20 @@ user_story_11_multi_protocol_edge_cases() {
   set_function_interpreter "$db_a" "wireguard_disconnect1" "cat"
 
   local wg_restore_config=$(create_test_config "restore-test.conf")
+  story_attest_key "$db_a" story
   run_vpn_switch "204" "$db_a" wireguard import "$wg_restore_config" > /dev/null 2>&1
   run_vpn_switch "205" "$db_a" wireguard start restore-test > /dev/null 2>&1
 
-  # Dump from A
-  local dump_restore=$(mktemp)
-  run_vpn_dump "206" "$db_a" > "$dump_restore" 2>/dev/null
+  # Export the pair from A (the session is transient, the pair carries none)
+  local dump_restore="$db_a/pair.sh" bundle_restore="$db_a/pair.tar.gz"
+  run_vpn_switch "206" "$db_a" export full "$dump_restore" "$bundle_restore" > /dev/null 2>&1
 
-  # Database B: Bootstrap then restore
+  # Database B: Bootstrap then import
   local db_b=$(mktemp -d "${TMPDIR:-/tmp}/vpn-restore-b.XXXXXX")
   story_db "$db_b"
   bootstrap_database "$db_b"
-  run_vpn_switch "207" "$db_b" restore "$dump_restore" > /dev/null 2>&1
+  story_attest_key "$db_b" story
+  run_vpn_switch "207" "$db_b" import "$dump_restore" "$bundle_restore" > /dev/null 2>&1
 
   # Verify B has configs
   assert_file_exists "$db_b/wireguard/restore-test.conf" "Scenario 4.2: Restored database has WG config"

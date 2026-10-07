@@ -1211,6 +1211,7 @@ _openvpn_info1() {
 # @returns shell commands (restorable database dump)
 # @example vpn-switch openvpn dump
 # @see     dump
+# @env     VPN_SWITCH_ARCHIVE_BASE  the prefix the import lines are written against (bound by restore replay)
 #@end
 ___openvpn_dump0() {
   local ovpn_dir="$VPN_SWITCH_BASE/openvpn"
@@ -1232,9 +1233,9 @@ ___openvpn_dump0() {
       continue
     fi
 
-    # Use absolute path for imports with proper quoting
-    # Output literal \$VPN_SWITCH_CONTEXT_SCRIPT so it expands during restore
-    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" openvpn import \"$config_file\""
+    # The path against "$VPN_SWITCH_ARCHIVE_BASE": a plain restore binds it to
+    # this database, an import to the extracted bundle (restore replay)
+    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" openvpn import \"\$VPN_SWITCH_ARCHIVE_BASE/openvpn/$(basename -- "$config_file")\""
   done
 
   # Output separator

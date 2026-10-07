@@ -64,7 +64,7 @@ for module_file in "$INCLUDE_DIR"/*.sh; do
   [ "$module_name" != engine.sh ] || continue   # the engine is no module: sourced first, always
 
   # Extract function names from this module (match all anchor functions: _, __, ___)
-  funcs=$(grep -o '^_[a-z_]*[0-9]() {' "$module_file" 2>/dev/null | sed 's/() {.*//' || true)
+  funcs=$(grep -o '^__*[a-z][a-z0-9_]*[0-9]() {' "$module_file" 2>/dev/null | sed 's/() {.*//' || true)
 
   for func in $funcs; do
     # Add to mapping: function:module

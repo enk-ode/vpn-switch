@@ -6,6 +6,49 @@ All notable changes to vpn-switch are documented here. The format is based on
 
 ## [Unreleased] — towards 1.0.0
 
+- `import` into a database that is not there makes it: the dump names its
+  profile (new header line `# Profile:`), its signature is verified against
+  the keyring the dump's own `openpgp add` record names (an absolute
+  gnupghome that exists here, else the user's default keyring), the
+  database is bootstrapped with that profile, the signer pinned under the
+  record name the dump carries, the terminal interpreter pinned to `sh`
+  (an import is asked for), then the import runs as always (`import
+  bootstrap`, internal; `import` joins the commands that run without a
+  database). The patch script `template/rescue/vpn-switch-import-db-patch.sh`
+  (with the template tree under `lib/vpn-switch/template/rescue/`) builds
+  a user's database into a rescue root for elebake's `stage rescue patch`:
+  `sh <script> <user> <resources>`, as root inside the root (elebake puts a
+  one-shot jail on it), `su -l` to the user: the signer's public key from
+  `signer.asc` into the user's keyring, then `vpn-switch import`.
+- The session block of a dump says what a saved session IS, in the user's
+  own words: `<protocol> start <config>` then `session save <name>` (one
+  start, one save per name), inside a guard that binds the connect
+  terminals to `cat` -- the replay builds each session with its scripts
+  and connects nothing -- and switches the environment cache back on after
+  each pin change. The block of internal steps with the `"$$"` placeholder
+  (`session create`/`populate`, `patch`, `configure`) is gone: it replayed
+  the inner form of a session instead of describing one, and carried only
+  the first. `sync` starts with `database init`, so a database older than
+  the source gains the directories the pair needs (`export/`, `openpgp/`,
+  `provenance/`); the pair's files are the owner's alone (dump, signature
+  and bundle 0600). The root above the database (`VPN_SWITCH_ROOT`) now
+  survives the re-exec and the batch environment.
+
+- The export/import pair, ported from elebake: `export redacted|full|minimized <dump> <bundle>`
+  writes the database as a dump plus a bundle of the files it names
+  (configurations, openpgp records, receipts -- the strategy says which travel: redacted leaves the credentials at home, minimized the receipts), the bundle's MANIFEST
+  attested and the dump sealed to the bundle and signed with the pinned
+  OpenPGP key (`openpgp add`, `VPN_SWITCH_ARCHIVE_ATTEST_KEY`); `import
+  <dump> <bundle>` verifies signer, seal and MANIFEST before anything
+  lands, files a receipt (`provenance list`) and refuses a downgrade by
+  serial. `restore` takes the same admissibility path, so an unsigned dump
+  no longer replays. Dumps carry `# Version: 1` and `# Serial:`; their
+  import lines name files against `"$VPN_SWITCH_ARCHIVE_BASE"`, which a
+  plain restore binds to the database and an import to the extracted
+  bundle. The dispatcher binds the longest anchor name first (`filter
+  full a b` is `filter_full`/2, not `filter`/3) and the metadata
+  generator keeps names with inner digits (`restore_v1`).
+
 - FreeBSD rc.d: the devd `linkup` does nothing until the boot's own `start`
   has run (`/var/run/vpn_switch.started`): the uplink's LINK_UP is queued
   before devd runs, so `linkup` used to start the session before pf and the
