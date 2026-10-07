@@ -382,8 +382,12 @@ ___phases_sync1() {
   local phase_dir="$VPN_SWITCH_TEMPLATE_DIR/phase/$profile_name/$phase_name"
 
   # Validation at generation time
-  if [ ! -d "$phase_dir" ]; then
-    echo "# Warning: Phase directory not found: $phase_name (skipping)"
+  if [ ! -d "$phase_dir" ] || [ -z "$(ls "$phase_dir"/*.sh 2>/dev/null)" ]; then
+    if ls "$VPN_SWITCH_TEMPLATE_DIR"/phase/*/connect/"$phase_name".sh >/dev/null 2>&1; then
+      echo "# phase $phase_name: no base backends, the protocol templates provide it"
+    else
+      echo "# Warning: Phase directory not found: $phase_name (skipping)"
+    fi
     return 0
   fi
 

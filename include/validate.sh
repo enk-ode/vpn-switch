@@ -401,7 +401,7 @@ _permissions_validate0() {
 
   # Database root permissions (should be 0700)
   if [ -d "$VPN_SWITCH_BASE" ]; then
-    perms=$($EXAMINE_FILE_PERMS "$VPN_SWITCH_BASE" 2>/dev/null)
+    perms=$($EXAMINE_FILE_PERMS "$(cd "$VPN_SWITCH_BASE" && pwd -P)" 2>/dev/null)
     if [ "$perms" != "700" ] && [ "$perms" != "40700" ]; then
       echo "# [WARNING] Database directory permissions: $perms (should be 0700)"
       warnings=$((warnings + 1))

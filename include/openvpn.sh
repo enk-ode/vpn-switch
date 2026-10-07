@@ -590,11 +590,13 @@ ___openvpn_inspect0() {
 # @internal OpenVPN enumeration helper
 #@end
 _openvpn_enumerate0() {
+  local base_real
+  base_real=$(cd "$VPN_SWITCH_BASE" 2>/dev/null && pwd -P)
   # Process Table Analysis - enumerate running OpenVPN processes
   # Generates shell code that examines process table at execution time
 
   cat <<EOF
-ps_output=\$(ps auxww 2>>"$LOG_FILE" | grep '[o]penvpn' || true)
+ps_output=\$(ps auxww 2>>"$LOG_FILE" | awk '{ c = \$11; sub(".*/", "", c); if (c == "openvpn") print }' || true)
 
 if [ -z "\$ps_output" ]; then
   echo "# No openvpn processes found"
@@ -603,15 +605,15 @@ fi
 
 echo "\$ps_output" | while IFS= read -r line; do
   pid=\$(echo "\$line" | awk '{print \$2}')
-  cmd=\$(echo "\$line" | awk '{for(i=11;i<=NF;i++) printf \$i " "; print ""}')
+  cmd=\$(echo "\$line" | awk '{for(i=11;i<=NF;i++) printf "%s ", \$i; print ""}')
   config=\$(echo "\$cmd" | sed -n 's/.*--config[[:space:]]*\([^[:space:]]*\).*/\1/p')
 
   if [ -z "\$config" ]; then
     config='(inline configuration)'
   fi
 
-  if echo "\$config" | grep -q "^$VPN_SWITCH_BASE/.session/"; then
-    session_id=\$(echo "\$config" | sed "s|^$VPN_SWITCH_BASE/.session/\([^/]*\)/.*|\1|")
+  if echo "\$config" | grep -q "^$VPN_SWITCH_BASE/.session/\|^$base_real/.session/"; then
+    session_id=\$(echo "\$config" | sed "s|^$VPN_SWITCH_BASE/.session/||; s|^$base_real/.session/||; s|/.*||")
     echo "#"
     echo "# ✓ openvpn (PID \$pid) [managed by this instance]"
     echo "#   Config: \$config"
@@ -700,19 +702,19 @@ _openvpn_list0() {
   echo "# === OpenVPN Configurations ==="
   echo "#"
   echo "# Configuration files:"
-  scan_openvpn_configs
+  scan_openvpn_configs | sed 's/^/# /'
 
   # Check if there are protocol-level links (aliases) to show
   local links=$(scan_openvpn_links)
   if [ -n "$links" ]; then
     echo "#"
     echo "# Protocol-level links:"
-    echo "$links"
+    printf '%s\n' "$links" | sed 's/^/# /'
   fi
 
   echo "#"
   echo "# Groups: (use 'openvpn list <group>' to see contents)"
-  scan_openvpn_groups
+  scan_openvpn_groups | sed 's/^/# /'
 }
 
 #@help _openvpn_list1
@@ -741,10 +743,10 @@ _openvpn_list1() {
     # Show symlink target if it's a link
     if [ -L "$item" ]; then
       local target=$(readlink "$item")
-      echo "openvpn/$group/$item_name -> $target"
+      echo "# openvpn/$group/$item_name -> $target"
     else
       # Regular file/directory (shouldn't happen in groups, but be safe)
-      echo "openvpn/$group/$item_name"
+      echo "# openvpn/$group/$item_name"
     fi
   done | sort
 }

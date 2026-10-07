@@ -549,7 +549,7 @@ control command lookup in the two contexts.
 PATH
   Used by: vpn-switch.sh itself (management: inspect, validate, status, list,
            config handling) and the interpreter that runs each function.
-  Default: /sbin:/bin:/usr/bin:/usr/local/bin
+  Default: /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
   Purpose: Resolve the external tools that management invokes BY BARE NAME -
            both coreutils (sh, sed, grep, readlink, stat, ...) and the
            read-only system inspectors (ifconfig, netstat, pfctl, wg, ps, ...).

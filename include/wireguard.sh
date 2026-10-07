@@ -486,11 +486,13 @@ ___wireguard_inspect0() {
 # @internal WireGuard enumeration helper
 #@end
 _wireguard_enumerate0() {
+  local base_real
+  base_real=$(cd "$VPN_SWITCH_BASE" 2>/dev/null && pwd -P)
   # Process Table Analysis - enumerate running WireGuard processes
   # Generates shell code that examines process table at execution time
 
   cat <<EOF
-ps_output=\$(ps auxww 2>>"$LOG_FILE" | grep '[w]g-quick' || true)
+ps_output=\$(ps auxww 2>>"$LOG_FILE" | awk '{ c = \$11; sub(".*/", "", c); if (c == "wg-quick") print }' || true)
 
 if [ -z "\$ps_output" ]; then
   echo "# No wg-quick processes found"
@@ -499,11 +501,11 @@ fi
 
 echo "\$ps_output" | while IFS= read -r line; do
   pid=\$(echo "\$line" | awk '{print \$2}')
-  cmd=\$(echo "\$line" | awk '{for(i=11;i<=NF;i++) printf \$i " "; print ""}')
+  cmd=\$(echo "\$line" | awk '{for(i=11;i<=NF;i++) printf "%s ", \$i; print ""}')
   config=\$(echo "\$cmd" | sed -n 's/.*wg-quick[[:space:]]*up[[:space:]]*\([^[:space:]]*\).*/\1/p')
 
-  if echo "\$config" | grep -q "^$VPN_SWITCH_BASE/.session/"; then
-    session_id=\$(echo "\$config" | sed "s|^$VPN_SWITCH_BASE/.session/\([^/]*\)/.*|\1|")
+  if echo "\$config" | grep -q "^$VPN_SWITCH_BASE/.session/\|^$base_real/.session/"; then
+    session_id=\$(echo "\$config" | sed "s|^$VPN_SWITCH_BASE/.session/||; s|^$base_real/.session/||; s|/.*||")
     interface=\$(basename "\$config" .conf 2>>"$LOG_FILE" || echo 'unknown')
     echo "#"
     echo "# ✓ wg-quick (PID \$pid) [managed by this instance]"
@@ -671,19 +673,19 @@ _wireguard_list0() {
   echo "# === WireGuard Configurations ==="
   echo "#"
   echo "# Configuration files:"
-  scan_wireguard_configs
+  scan_wireguard_configs | sed 's/^/# /'
 
   # Check if there are protocol-level links (aliases) to show
   local links=$(scan_wireguard_links)
   if [ -n "$links" ]; then
     echo "#"
     echo "# Protocol-level links:"
-    echo "$links"
+    printf '%s\n' "$links" | sed 's/^/# /'
   fi
 
   echo "#"
   echo "# Categories: (use 'wireguard list <category>' to see contents)"
-  scan_wireguard_categories
+  scan_wireguard_categories | sed 's/^/# /'
 }
 
 #@help _wireguard_list1
@@ -717,10 +719,10 @@ _wireguard_list1() {
     # Show symlink target if it's a link
     if [ -L "$item" ]; then
       local target=$(readlink "$item")
-      echo "wireguard/$category/$item_name -> $target"
+      echo "# wireguard/$category/$item_name -> $target"
     else
       # Regular file/directory (shouldn't happen in categories, but be safe)
-      echo "wireguard/$category/$item_name"
+      echo "# wireguard/$category/$item_name"
     fi
   done | sort
 }

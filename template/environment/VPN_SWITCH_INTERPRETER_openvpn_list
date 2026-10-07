@@ -1,4 +1,4 @@
-cat
+cut -b3-
 # Interpreter for 'vpn-switch openvpn list' command
 # Terminal function that outputs listing of configs and groups directly to user
 #

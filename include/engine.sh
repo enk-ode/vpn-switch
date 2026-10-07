@@ -139,7 +139,7 @@ build_env_args_full() {
     for varfile in "$env_base/local"/*; do
       [ -f "$varfile" ] || continue
       varname=${varfile##*/}
-      [ "$varname" != "VPN_SWITCH_CACHE_ENV_ARGS" ] || continue
+      case "$varname" in *[!A-Za-z0-9_]*|VPN_SWITCH_CACHE_ENV_ARGS*) continue ;; esac
       IFS= read -r value < "$varfile" || value=""
       should_skip_env_value "$value" && continue
       seen_vars="$seen_vars $varname "
@@ -150,6 +150,7 @@ build_env_args_full() {
     for varfile in "$env_base/default"/*; do
       [ -f "$varfile" ] || continue
       varname=${varfile##*/}
+      case "$varname" in *[!A-Za-z0-9_]*|VPN_SWITCH_CACHE_ENV_ARGS*) continue ;; esac
       if [ "$varname" = "VPN_SWITCH_BASE" ]; then
         display_warning "VPN_SWITCH_BASE found in .env files but will be ignored (must be set via environment)" >&2
         continue

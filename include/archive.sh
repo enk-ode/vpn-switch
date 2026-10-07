@@ -126,6 +126,18 @@ __export_pair3() {
         printf '%s\n' "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" export pair '$1' '$2' '$3' '$cur'"
 }
 
+#@help _export_fresh1
+# @command export fresh <dump>
+# @summary Act terminal (owner): the detached signature of an earlier export at this path goes -- the dump is written anew and that signature is void (seal and attest refuse a dump that carries one)
+# @group   database
+# @internal
+# @see     export
+#@end
+_export_fresh1() {
+        printf '%s\n' "$MODIFY_FILE_REMOVE '$1.asc' 2>/dev/null || true"
+        emit_note "export: a signature of an earlier export at $1 is void"
+}
+
 #@help ___export_pair4
 # @internal 'export pair <strategy> <dump> <bundle> <serial>': the one export -- write the dump (its header carries the next serial), collect the files, filter the collection by the strategy, attest its MANIFEST, bundle it, seal the pair (the seal hashes the bundle), attest the dump, and advance the serial LAST -- a failed export (a pinentry that could not open) leaves the number to the next attempt; one signature covers the pair
 # @env     VPN_SWITCH_ARCHIVE_ATTEST_KEY  the openpgp record that signs
@@ -133,6 +145,7 @@ __export_pair3() {
 ___export_pair4() {
         local work="$VPN_SWITCH_BASE/export" key="${VPN_SWITCH_ARCHIVE_ATTEST_KEY:-}"
         printf '%s\n' "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" archive key pinned"
+        printf '%s\n' "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" export fresh '$2'"
         printf '%s\n' "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" dump '$4' > '$2'"
         printf '%s\n' "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" collect > '$work/collection.raw'"
         printf '%s\n' "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" filter '$1' '$work/collection.raw' '$work/collection'"

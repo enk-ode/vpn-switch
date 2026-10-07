@@ -206,12 +206,13 @@ _database_init0() {
           ;;
       esac
 
-      # 3. Check permissions (warn only)
+      # 3. Permissions: the layout declares them, init sets them right
       local actual_mode=$($CMD_STAT_PERMS "$full_path" 2>/dev/null)
       local normalized_expected=$(echo "$mode" | sed 's/^0*//')
       local normalized_actual=$(echo "$actual_mode" | sed 's/^0*//')
       if [ "$normalized_actual" != "$normalized_expected" ]; then
-        echo "echo '# Warning: Directory $dir has mode $actual_mode, expected $mode' >&2"
+        echo "$MODIFY_FILE_PERMS $mode '$full_path'"
+        echo "echo '# Fixed: Directory $dir had mode $actual_mode, now $mode' >&2"
       fi
 
       # 4. Exec flag check

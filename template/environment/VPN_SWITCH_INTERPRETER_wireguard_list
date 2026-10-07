@@ -1,4 +1,4 @@
-cat
+cut -b3-
 # Interpreter for 'vpn-switch wireguard list' command
 # Terminal function that outputs listing of configs and categories directly to user
 #

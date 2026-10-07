@@ -1219,6 +1219,7 @@ _session_describe0() {
   local found=0
   for session_dir in "$session_base"/*/; do
     [ -d "$session_dir" ] || continue
+    session_dir=${session_dir%/}
     found=1
 
     local pid=$(basename -- "$session_dir")
