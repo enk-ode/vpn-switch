@@ -262,6 +262,7 @@ test_setup() {
   # Tests simulate user who has opted into auto-execution for convenience
   # Use setenv to configure (black-box approach - tests the actual user interface)
   VPN_SWITCH_BASE="$TEST_DIR" "$TEST_SCRIPT" setenv VPN_SWITCH_TERMINAL_INTERPRETER sh > /dev/null 2>&1
+  VPN_SWITCH_BASE="$TEST_DIR" "$TEST_SCRIPT" setenv VPN_SWITCH_INTERPRETER_interface_destroy cat > /dev/null 2>&1
 
   # Set minimal PATH for vpn-switch operations
   VPN_SWITCH_BASE="$TEST_DIR" "$TEST_SCRIPT" setenv VPN_SWITCH_PATH "/bin:/usr/bin:/usr/local/bin" > /dev/null 2>&1
@@ -498,6 +499,7 @@ test_export_import_pair() {
   # the receiving database: fresh, the sender's key pinned
   VPN_SWITCH_PATH="/bin:/usr/bin:/usr/local/bin" "$TEST_SCRIPT" bootstrap "$dst" "$TEST_PROFILE" > /dev/null 2>&1 || true
   VPN_SWITCH_BASE="$dst" "$TEST_SCRIPT" setenv VPN_SWITCH_TERMINAL_INTERPRETER sh > /dev/null 2>&1
+  VPN_SWITCH_BASE="$dst" "$TEST_SCRIPT" setenv VPN_SWITCH_INTERPRETER_interface_destroy cat > /dev/null 2>&1
   o=$(VPN_SWITCH_BASE="$dst" VPN_SWITCH_DISPLAY_ANSI=0 "$TEST_SCRIPT" import "$out/vs.sh" "$out/vs.tar.gz" 2>&1) || true
   if printf '%s\n' "$o" | grep -q "ATTEST_KEY not set" && [ ! -f "$dst/wireguard/ch-zrh-01.conf" ]; then
     pass "import without a pinned signer is refused before anything lands"
@@ -1135,6 +1137,14 @@ EOF
   else
     fail "Session creation not logged"
     printf '%s\n' "Output: $output"
+  fi
+
+  # The guard emits the destroy of the interface unconditionally; the act judges when it runs (bound to cat in every test database: displayed, never run)
+  if printf '%s\n' "$output" | grep -q "if ifconfig $test_interface >/dev/null 2>&1; then ifconfig $test_interface destroy || exit 1" \
+     && ! printf '%s\n' "$output" | grep -q "Auto-destroying"; then
+    pass "The interface destroy is emitted unconditionally and judged by the act"
+  else
+    fail "Interface destroy act: $(printf '%s\n' "$output" | grep -i "interface" | head -3)"
   fi
 
   # Verify wg-quick command is in generated connect.sh

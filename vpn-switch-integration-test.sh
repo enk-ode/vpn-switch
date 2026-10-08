@@ -442,7 +442,8 @@ bootstrap_database() {
   # SAFETY: Do NOT destroy interfaces blindly!
   # Tests use test-specific interface names (wg_test0, tun_test0)
   # Production interfaces (wg0, tun0) must NEVER be touched by tests
-  # The orphaned interface auto-destroy in check_existing_session() handles cleanup safely
+  # The destroy of a session's interface is judged by its act when it runs: a
+  # test interface is never there, the act notes that and touches nothing
 
   # Set minimal PATH for bootstrap operations (needed for run_env before database exists)
   export VPN_SWITCH_PATH="/bin:/usr/bin:/usr/local/bin"
@@ -458,6 +459,7 @@ bootstrap_database() {
 
   # Configure as "experienced user" (auto-execution)
   VPN_SWITCH_BASE="$basedir" $SCRIPT setenv VPN_SWITCH_TERMINAL_INTERPRETER sh > /dev/null 2>&1
+  VPN_SWITCH_BASE="$basedir" $SCRIPT setenv VPN_SWITCH_INTERPRETER_interface_destroy cat > /dev/null 2>&1
 
   # Set minimal PATH for vpn-switch operations
   VPN_SWITCH_BASE="$basedir" $SCRIPT setenv VPN_SWITCH_PATH "/bin:/usr/bin:/usr/local/bin" > /dev/null 2>&1
@@ -781,6 +783,7 @@ user_story_2_session_management() {
   assert_contains "$(cat "$dump_file")" "wireguard start wg-test.conf" "Dump contains WG session start"
   assert_contains "$(cat "$dump_file")" "openvpn start vpn-test.ovpn" "Dump contains OVPN session start"
   assert_contains "$(cat "$dump_file")" "setenv VPN_SWITCH_INTERPRETER_wireguard_connect1 cat" "Dump guards the session block (connect bound to cat)"
+  assert_contains "$(cat "$dump_file")" "setenv VPN_SWITCH_INTERPRETER_interface_destroy cat" "Dump guards the session block (the interface destroy bound to cat)"
   assert_contains "$(cat "$dump_file")" "environment refresh" "Dump refreshes the environment after the pins of the session block"
   assert_contains "$(cat "$dump_file")" "session save work" "Dump contains WG save command"
   assert_contains "$(cat "$dump_file")" "session save home" "Dump contains OVPN save command"
@@ -2835,6 +2838,7 @@ user_story_12_phase_backend_selection() {
   # Enable session management functions (create directories, write metadata)
   # These are safe operations that don't affect system state
   run_vpn_switch "211c" "$test_db" setenv VPN_SWITCH_INTERPRETER_session_create1 sh > /dev/null 2>&1
+  run_vpn_switch "211e" "$test_db" setenv VPN_SWITCH_INTERPRETER_interface_destroy cat > /dev/null 2>&1
   run_vpn_switch "211d" "$test_db" setenv VPN_SWITCH_INTERPRETER_session_populate3 sh > /dev/null 2>&1
 
   # Verify backend templates were lifted during init

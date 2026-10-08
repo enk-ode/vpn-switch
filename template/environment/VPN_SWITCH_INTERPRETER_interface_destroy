@@ -1,0 +1,6 @@
+sh
+# Interpreter for _interface_destroy1 - the destroy of the session's interface
+# before a session is built: the act judges when it runs (a leftover goes,
+# nothing there is nothing to do). sh runs it; a database whose destroy needs
+# root pins 'sudo sh' like the connect and disconnect terminals; a dump binds
+# it to cat around its session block.

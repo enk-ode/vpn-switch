@@ -1104,12 +1104,14 @@ ___session_dump0() {
   [ -n "$lines" ] || return 0
 
   # The guard: start builds the session and would connect -- the connect
-  # terminals bound to cat and the environment refreshed, the session is
-  # built with its scripts, no connection is made; the pins lifted and the
-  # environment refreshed again afterwards.
-  echo "# Saved sessions: start + save, the connect step bound to cat (a session is built, no connection is made)"
+  # terminals and the interface destroy bound to cat and the environment
+  # refreshed, the session is built with its scripts, no interface is
+  # touched, no connection is made; the pins lifted and the environment
+  # refreshed again afterwards.
+  echo "# Saved sessions: start + save, the connect step and the interface destroy bound to cat (a session is built, no interface is touched, no connection is made)"
   echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" setenv VPN_SWITCH_INTERPRETER_wireguard_connect1 cat"
   echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" setenv VPN_SWITCH_INTERPRETER_openvpn_connect1 cat"
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" setenv VPN_SWITCH_INTERPRETER_interface_destroy cat"
   echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" environment refresh"
   printf '%s' "$lines" | sort | while read -r dir proto config name; do
     if [ "$dir" != "$prev" ]; then
@@ -1120,6 +1122,7 @@ ___session_dump0() {
   done
   echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" unsetenv VPN_SWITCH_INTERPRETER_wireguard_connect1"
   echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" unsetenv VPN_SWITCH_INTERPRETER_openvpn_connect1"
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" unsetenv VPN_SWITCH_INTERPRETER_interface_destroy"
   echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" environment refresh"
 }
 
@@ -1323,7 +1326,8 @@ resolve_default_or_random() {
 #
 # The function outputs vpn-switch commands for:
 # - Session conflict detection and resolution
-# - Orphaned interface cleanup warnings
+# - The destroy of the session's interface, always emitted; the act judges
+#   when it runs (idempotent: a leftover goes, nothing there is nothing to do)
 # - Session directory creation with proper permissions
 #
 # Phase 2.1.1: Updated to include interface metadata and proper file permissions
@@ -1386,48 +1390,9 @@ check_and_create_session() {
     done
   fi
 
-  # Check for running VPN processes (database-aware, protocol-agnostic)
-  # We warn about conflicts but allow creation because:
-  # 1. Session creation happens at generation time (may not execute)
-  # 2. Different databases should be isolated
-  # 3. Same-database conflicts are caught by check #2 (session tracking)
-  for protocol_dir in "$VPN_SWITCH_BASE"/*; do
-    [ ! -d "$protocol_dir" ] && continue
-    [ -L "$protocol_dir" ] && continue  # Skip symlinks
-
-    local protocol=$(basename "$protocol_dir")
-    is_pseudo_protocol "$protocol" && continue
-
-    # Get binary path from environment variable (VPN_SWITCH_BINARY_<protocol>)
-    local binary_var="VPN_SWITCH_BINARY_${protocol}"
-    eval "local binary_path=\"\$$binary_var\""
-    [ -z "$binary_path" ] && continue
-
-    # Extract just the binary name for pgrep matching
-    local binary_name=$(basename "$binary_path")
-
-    if pgrep -f "${binary_name}.*${interface}" >/dev/null 2>&1; then
-      local matching_pids=$(pgrep -f "${binary_name}.*${interface}")
-      for pid in $matching_pids; do
-        local cmdline=$(ps -p "$pid" -o args= 2>/dev/null || continue)
-
-        if echo "$cmdline" | grep -q "$VPN_SWITCH_BASE"; then
-          # Same database - orphaned process (check #2 should have caught tracked sessions)
-          echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" log \"Warning: Found orphaned $binary_name process for $interface (PID: $pid)\" \"Proceeding - interface cleanup will handle if needed\""
-        else
-          # Different database - warn about potential conflict
-          echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" log \"Warning: Interface $interface may be in use by another database (PID: $pid)\" \"Session created. Connect will fail if interface exists.\""
-        fi
-      done
-    fi
-  done
-
-  # Fallback: Check for orphaned interfaces (platform-agnostic)
-  if $EXAMINE_NETWORK_INTERFACES "$interface" >/dev/null 2>&1; then
-    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" log \"Warning: Found orphaned interface $interface (no active process). Auto-destroying...\""
-    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" interface destroy \"$interface\""
-    echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" log \"Orphaned interface $interface destroyed\""
-  fi
+  # The session's interface: always the destroy, judged when the act runs
+  # (a leftover of an earlier session goes, nothing there is nothing to do)
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" interface destroy \"$interface\""
 
   # Output command to create minimal session directory (only PID file)
   # Uses existing _session_create1 terminal function for actual execution
@@ -1762,12 +1727,12 @@ __session_conflicts2() {
 # Terminal function - outputs shell commands to destroy an interface
 #
 #@help _interface_destroy1
-# @internal destroy an orphaned interface (cleanup chain step)
+# @internal destroy the session's interface when it is there -- judged when the act runs: a leftover of an earlier session goes (a failing destroy stops the batch), nothing there is nothing to do; the note says which
 #@end
 _interface_destroy1() {
   local interface="$1"
-  # Use printf format template for platform independence (FreeBSD vs Linux)
-  printf '%s 2>>"$LOG_FILE" || true\n' "$(printf "$MODIFY_INTERFACE_DESTROY_FMT" "$interface")"
+  printf 'if %s %s >/dev/null 2>&1; then %s || exit 1; printf "# interface %%s destroyed (a leftover of an earlier session)\\n" "%s" >&2; else printf "# interface %%s: not there, nothing to destroy\\n" "%s" >&2; fi\n' \
+    "$EXAMINE_NETWORK_INTERFACES" "$interface" "$(printf "$MODIFY_INTERFACE_DESTROY_FMT" "$interface")" "$interface" "$interface"
 }
 
 # Combinator - outputs exactly 1 vpn-switch command

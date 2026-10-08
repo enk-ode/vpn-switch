@@ -26,7 +26,9 @@
 # the rescue keeps it), then 'vpn-switch import <dump> <bundle>' -- import
 # makes the database when there is none (bootstrap with the profile the
 # dump names, the signer pinned under the record name the dump carries) and
-# replays the dump.
+# replays the dump. The import's stdout (the dump displays the session
+# scripts it builds) is kept for the failure case only; its notes and
+# errors go to stderr as always.
 set -u
 user=${1:-}; res=${2:-}
 me=$(basename "$0")
@@ -40,6 +42,9 @@ test -r "$res/signer.asc" || { printf '%s: no %s/signer.asc -- the public key of
 test -x /usr/local/bin/vpn-switch || { printf '%s: no /usr/local/bin/vpn-switch in the image (the vpn-switch package installed?)\n' "$me" >&2; exit 1; }
 rm -rf "$home/.vpn-switch"	# the database of the image IS the dump: never a union with a previous build
 printf '%s: vpn-switch import as %s (home %s)\n' "$me" "$user" "$home" >&2
-su -l "$user" -c "gpg --batch --quiet --import '$res/signer.asc' && vpn-switch import '$res/dump.sh' '$res/bundle.tar.gz'"; rc=$?
+out=$(mktemp) || exit 1
+su -l "$user" -c "gpg --batch --quiet --import '$res/signer.asc' && vpn-switch import '$res/dump.sh' '$res/bundle.tar.gz'" > "$out"; rc=$?
 su -l "$user" -c "gpgconf --kill all" 2>/dev/null
+test "$rc" = 0 || cat "$out" >&2
+rm -f "$out"
 exit $rc

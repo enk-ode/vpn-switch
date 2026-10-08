@@ -173,7 +173,8 @@ vpn-switch inspect            -&gt;  all &lt;object&gt; inspect (batch)
     source.</p>
 <dl class="Bl-tag">
   <dt id="sync"><a class="permalink" href="#sync"><b>sync</b></a></dt>
-  <dd>Refresh the database from installed source templates</dd>
+  <dd>Refresh the database from installed source templates: the layout (database
+      init), the phases, the environment defaults, the version stamp</dd>
   <dt id="version"><a class="permalink" href="#version"><b>version</b></a></dt>
   <dd>Report the database and source SHAs (drift means run `sync')</dd>
   <dt id="stop"><a class="permalink" href="#stop"><b>stop</b></a></dt>
@@ -364,6 +365,19 @@ vpn-switch inspect            -&gt;  all &lt;object&gt; inspect (batch)
       receipt), the replay. ONLY into an EMPTY database (a fresh bootstrap with
       the attest key pinned): on a database that already holds the configs the
       replay reports them as existing and goes on</dd>
+  <dt id="import~2"><a class="permalink" href="#import~2"><b>import bootstrap
+    &lt;dump&gt; &lt;bundle&gt;</b></a></dt>
+  <dd>Import into a database that is not there (no .env layer under
+      VPN_SWITCH_BASE): the dump is readable and signed, names its profile (`#
+      Profile:' in its header) and carries the openpgp record of its signer
+      (`openpgp add &lt;name&gt; &lt;keyid&gt; [&lt;gnupghome&gt;]'); the
+      signature is verified against the keyring that record names &#x2013; an
+      absolute gnupghome that exists here, else YOUR default keyring (a
+      gnupghome inside the database travels in the bundle and serves after the
+      import, not before); then `import bootstrap &lt;dump&gt; &lt;bundle&gt;
+      &lt;profile&gt; &lt;record&gt; &lt;fingerprint&gt; [&lt;gnupghome&gt;]'.
+      The trust is the keyring&#x2019;s: the first signer a fresh database meets
+      is one whose public key you hold</dd>
   <dt id="attest"><a class="permalink" href="#attest"><b>attest &lt;file&gt;
     &lt;key&gt;</b></a></dt>
   <dd>Sign a file with a registered openpgp key (armored detached signature
@@ -491,6 +505,14 @@ vpn-switch inspect            -&gt;  all &lt;object&gt; inspect (batch)
 <p class="Pp">Read and change vpn-switch environment variables.</p>
 <dl class="Bl-tag">
   <dt id="environment"><a class="permalink" href="#environment"><b>environment
+    refresh</b></a></dt>
+  <dd>The environment as a new call finds it: at generation time
+      VPN_SWITCH_CACHE_ENV_ARGS and VPN_SWITCH_CONTEXT_BOOTSTRAPPED are unset
+      and the cache file removed; then `environment cache off' and `environment
+      cache on' &#x2013; the cache rebuilt from .env/, the calls after it load
+      it afresh. A dump places it after the setenv lines of its prologue and of
+      its epilogue</dd>
+  <dt id="environment~2"><a class="permalink" href="#environment~2"><b>environment
     cache [on|off|status]</b></a></dt>
   <dd>Manage the cached-environment optimisation</dd>
   <dt id="setenv"><a class="permalink" href="#setenv"><b>setenv &lt;VAR&gt;
@@ -519,7 +541,7 @@ vpn-switch inspect            -&gt;  all &lt;object&gt; inspect (batch)
   <dt id="helpintp"><a class="permalink" href="#helpintp"><b>helpintp &lt;fn&gt;
     [&lt;location&gt;]</b></a></dt>
   <dd>Show docs for an interpreter variable (class default or per-function)</dd>
-  <dt id="environment~2"><a class="permalink" href="#environment~2"><b>environment
+  <dt id="environment~3"><a class="permalink" href="#environment~3"><b>environment
     inspect</b></a></dt>
   <dd>Show the environment resolution chain (default -&gt; local -&gt;
     cache)</dd>

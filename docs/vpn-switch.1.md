@@ -141,7 +141,7 @@ fresh install.
 Bring tunnels up and down, and keep the database in sync with the source.
 
 **sync**
-:   Refresh the database from installed source templates
+:   Refresh the database from installed source templates: the layout (database init), the phases, the environment defaults, the version stamp
 
 **version**
 :   Report the database and source SHAs (drift means run 'sync')
@@ -279,6 +279,9 @@ signed pair (dump + bundle) that moves it to another machine.
 **import \<dump\> \<bundle\>**
 :   Replay an exported pair into the current database, checked end to end BEFORE anything lands, cheapest first, every detail read ONCE on the way in and handed down: the dump's serial, the pinned signer, the dump's signature (gpg once), the signer's floor, this database's serial; then 'import \<dump\> \<bundle\> \<serial\> \<key\> \<fpr\> \<floor\> \<cur\>' -- the seal (this bundle is the one the dump names), the bundle unpacked into import's own scratch under incoming/, its MANIFEST (pinned signer, every hash), the receipt filed BEFORE the replay (the replay runs keep-going, so a redacted pair's withheld elements cost no receipt), the replay. ONLY into an EMPTY database (a fresh bootstrap with the attest key pinned): on a database that already holds the configs the replay reports them as existing and goes on
 
+**import bootstrap \<dump\> \<bundle\>**
+:   Import into a database that is not there (no .env layer under VPN_SWITCH_BASE): the dump is readable and signed, names its profile ('# Profile:' in its header) and carries the openpgp record of its signer ('openpgp add \<name\> \<keyid\> [\<gnupghome\>]'); the signature is verified against the keyring that record names -- an absolute gnupghome that exists here, else YOUR default keyring (a gnupghome inside the database travels in the bundle and serves after the import, not before); then 'import bootstrap \<dump\> \<bundle\> \<profile\> \<record\> \<fingerprint\> [\<gnupghome\>]'. The trust is the keyring's: the first signer a fresh database meets is one whose public key you hold
+
 **attest \<file\> \<key\>**
 :   Sign a file with a registered openpgp key (armored detached signature -\> \<file\>.asc): the file exists, the record exists and carries its keyid; then 'attest sign'
 
@@ -350,6 +353,9 @@ this database exports and the signer a receiver expects (pinned).
 ## Configuration
 
 Read and change vpn-switch environment variables.
+
+**environment refresh**
+:   The environment as a new call finds it: at generation time VPN_SWITCH_CACHE_ENV_ARGS and VPN_SWITCH_CONTEXT_BOOTSTRAPPED are unset and the cache file removed; then 'environment cache off' and 'environment cache on' -- the cache rebuilt from .env/, the calls after it load it afresh. A dump places it after the setenv lines of its prologue and of its epilogue
 
 **environment cache [on\|off\|status]**
 :   Manage the cached-environment optimisation

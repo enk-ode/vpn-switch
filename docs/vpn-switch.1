@@ -183,7 +183,8 @@ Bring tunnels up and down, and keep the database in sync with the
 source.
 .TP
 \f[B]sync\f[R]
-Refresh the database from installed source templates
+Refresh the database from installed source templates: the layout
+(database init), the phases, the environment defaults, the version stamp
 .TP
 \f[B]version\f[R]
 Report the database and source SHAs (drift means run `sync')
@@ -382,6 +383,19 @@ ONLY into an EMPTY database (a fresh bootstrap with the attest key
 pinned): on a database that already holds the configs the replay reports
 them as existing and goes on
 .TP
+\f[B]import bootstrap <dump> <bundle>\f[R]
+Import into a database that is not there (no .env layer under
+VPN_SWITCH_BASE): the dump is readable and signed, names its profile (`#
+Profile:' in its header) and carries the openpgp record of its signer
+(`openpgp add <name> <keyid> [<gnupghome>]'); the signature is verified
+against the keyring that record names \(en an absolute gnupghome that
+exists here, else YOUR default keyring (a gnupghome inside the database
+travels in the bundle and serves after the import, not before); then
+`import bootstrap <dump> <bundle> <profile> <record> <fingerprint>
+[<gnupghome>]'.
+The trust is the keyring\(cqs: the first signer a fresh database meets
+is one whose public key you hold
+.TP
 \f[B]attest <file> <key>\f[R]
 Sign a file with a registered openpgp key (armored detached signature
 \-> <file>.asc): the file exists, the record exists and carries its
@@ -503,6 +517,15 @@ into the world: one `openpgp collect <key>' per record, none is a
 comment line
 .SS Configuration
 Read and change vpn\-switch environment variables.
+.TP
+\f[B]environment refresh\f[R]
+The environment as a new call finds it: at generation time
+VPN_SWITCH_CACHE_ENV_ARGS and VPN_SWITCH_CONTEXT_BOOTSTRAPPED are unset
+and the cache file removed; then `environment cache off' and
+`environment cache on' \(en the cache rebuilt from .env/, the calls
+after it load it afresh.
+A dump places it after the setenv lines of its prologue and of its
+epilogue
 .TP
 \f[B]environment cache [on|off|status]\f[R]
 Manage the cached\-environment optimisation
