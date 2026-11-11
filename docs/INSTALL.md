@@ -70,14 +70,18 @@ from one root, one variable.
 
 ## Prerequisites
 
-| | FreeBSD | Debian/Ubuntu | Alpine |
-|---|---|---|---|
-| make | `pkg install devel/gmake` (then `gmake`) | `make` (already GNU make) | `apk add make` |
-| WireGuard | `pkg install wireguard-tools` | `apt install wireguard-tools` | `apk add wireguard-tools` |
-| OpenVPN (optional) | `pkg install openvpn` | `apt install openvpn` | `apk add openvpn` |
-| ShellCheck (dev) | `pkg install hs-ShellCheck` | `apt install shellcheck` | `apk add shellcheck` |
+| | FreeBSD | Debian/Ubuntu | Alpine | OpenBSD |
+|---|---|---|---|---|
+| make | `pkg install devel/gmake` (then `gmake`) | `make` (already GNU make) | `apk add make` | `pkg_add gmake` (then `gmake`) |
+| WireGuard | `pkg install wireguard-tools` | `apt install wireguard-tools` | `apk add wireguard-tools` | `pkg_add wireguard-tools` |
+| OpenVPN (optional) | `pkg install openvpn` | `apt install openvpn` | `apk add openvpn` | `pkg_add openvpn--` (the default flavor; a bare `openvpn` is ambiguous) |
+| GnuPG (export/import) | `pkg install gnupg` | `apt install gnupg` | `apk add gnupg` | `pkg_add gnupg` |
+| ShellCheck (dev) | `pkg install hs-ShellCheck` | `apt install shellcheck` | `apk add shellcheck` | `pkg_add shellcheck` |
 
-vpn-switch itself is pure POSIX `/bin/sh` — no other runtime dependencies.
+vpn-switch itself is pure POSIX `/bin/sh`. `export` signs the dump with
+`gpg` and `import` verifies the signature, so GnuPG is the one runtime
+dependency beyond the VPN tools; without it the export fails, and the
+integration suite's export stories fail with it.
 
 ---
 

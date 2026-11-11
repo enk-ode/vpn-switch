@@ -1,23 +1,7 @@
-sudo sh | cut -b3-
-# Interpreter for 'vpn-switch openvpn enumerate' command
-# Terminal function that examines running OpenVPN processes
-#
-# Default value: "sh"
-#   Generates and executes shell code to examine process table
-#   May require elevated privileges (sudo/doas) to see root processes
-#   Function generates shell code at generation time
-#   Shell code executes at execution time
-#
-# Function behavior:
-#   - Searches process table for openvpn processes
-#   - Identifies managed vs unmanaged processes
-#   - Outputs diagnostic information as comments
-#
-# Example usage:
-#   vpn-switch openvpn enumerate
-#
-# To see processes running as root, set interpreter to:
-#   vpn-switch setenv VPN_SWITCH_INTERPRETER_openvpn_enumerate0 "sudo sh"
-#   # or: vpn-switch setenv VPN_SWITCH_INTERPRETER_openvpn_enumerate0 "doas sh"
-#
-# See ARCHITECTURE.md for details on terminal function pattern
+cut -b3-
+# Interpreter for 'vpn-switch openvpn enumerate'
+# Display-only: the process table is read at generation time, the report
+# comes out as comment lines (managed by this instance, by another
+# instance, not by vpn-switch); cut -b3- strips the leading '# '.
+# Nothing is executed, so no sudo is needed; on a system that hides other
+# users' processes from ps, run the whole command as root.

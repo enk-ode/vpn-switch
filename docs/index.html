@@ -608,6 +608,17 @@ vpn-switch inspect            -&gt;  all &lt;object&gt; inspect (batch)
     <b>VPN_SWITCH_INTERFACE_openvpn</b></a></dt>
   <dd>Interface names for each protocol. Defaults: <b>wg0</b> and
     <b>tun0</b>.</dd>
+  <dt id="VPN_SWITCH_CREDENTIALS_openvpn"><a class="permalink" href="#VPN_SWITCH_CREDENTIALS_openvpn"><b>VPN_SWITCH_CREDENTIALS_openvpn</b></a></dt>
+  <dd>Absolute path of a file with two lines, username then password, mode 0600,
+      kept outside the database (vpn-switch never writes it, and no export
+      carries it). At connect time a bare <b>auth-user-pass</b> line in an
+      OpenVPN config is patched to name this file; a line that already names a
+      file is left alone. Unset, <b>openvpn</b> prompts on the terminal, which
+      an rc service or a timer cannot answer. A session keeps only the path, so
+      when the provider&#x2019;s VPN credentials change (they are usually not
+      the account password: Proton issues a separate OpenVPN/IKEv2 username and
+      password), rewrite the file and reconnect. Default: (empty). See
+      <b>TUTORIAL_OPENVPN.md</b>.</dd>
   <dt id="VPN_SWITCH_KEEPALIVE_wireguard"><a class="permalink" href="#VPN_SWITCH_KEEPALIVE_wireguard"><b>VPN_SWITCH_KEEPALIVE_wireguard</b></a></dt>
   <dd>PersistentKeepalive (seconds) injected into patched WireGuard configs that
       do not set one themselves; an explicit value in the config always wins.
@@ -688,6 +699,20 @@ vpn-switch start switzerland
     </pre>
   </dd>
 </dl>
+<p class="Pp">Connect with OpenVPN to a provider that asks for a username and
+    password:</p>
+<dl class="Bl-tag">
+  <dt></dt>
+  <dd>
+    <pre>printf '%s\n' 'alice+pmp' 'the-vpn-password' &gt; ~/.vpn-switch/credentials.txt
+chmod 0600 ~/.vpn-switch/credentials.txt
+vpn-switch setenv VPN_SWITCH_CREDENTIALS_openvpn ~/.vpn-switch/credentials.txt
+vpn-switch openvpn import ~/Downloads/provider-ch-12.ovpn
+vpn-switch openvpn patch provider-ch-12     # auth-user-pass now names the file
+vpn-switch openvpn start provider-ch-12
+    </pre>
+  </dd>
+</dl>
 <p class="Pp">Save the live session by name, then resume later:</p>
 <dl class="Bl-tag">
   <dt></dt>
@@ -723,9 +748,10 @@ vpn-switch version
 <h2 class="Sh" id="SEE_ALSO"><a class="permalink" href="#SEE_ALSO">SEE
   ALSO</a></h2>
 <p class="Pp"><b>INSTALL.md</b>(7), <b>TUTORIAL_QUICKSTART.md</b>(7),
-    <b>TUTORIAL_SESSIONS.md</b>(7), <b>TUTORIAL_SUDO.md</b>(7),
-    <b>TUTORIAL_MIGRATION.md</b>(7), <b>TUTORIAL_TROUBLESHOOTING.md</b>(7),
-    <b>ARCHITECTURE.md</b>(7), <b>DEBUGGING_GUIDE.md</b>(7)</p>
+    <b>TUTORIAL_SESSIONS.md</b>(7), <b>TUTORIAL_OPENVPN.md</b>(7),
+    <b>TUTORIAL_SUDO.md</b>(7), <b>TUTORIAL_MIGRATION.md</b>(7),
+    <b>TUTORIAL_TROUBLESHOOTING.md</b>(7), <b>ARCHITECTURE.md</b>(7),
+    <b>DEBUGGING_GUIDE.md</b>(7)</p>
 <p class="Pp"><b>wg-quick</b>(8), <b>openvpn</b>(8), <b>pf.conf</b>(5),
     <b>resolvconf</b>(8)</p>
 </section>

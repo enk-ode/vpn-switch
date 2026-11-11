@@ -73,6 +73,7 @@ vpn-switch session switch home                              # or: stop + resume 
 
 **Use the tool:**
 - [TUTORIAL_SESSIONS.md](docs/TUTORIAL_SESSIONS.md) — Named sessions, save/resume
+- [TUTORIAL_OPENVPN.md](docs/TUTORIAL_OPENVPN.md) — OpenVPN with a credentials file: no prompt, rotation, what travels
 - [TUTORIAL_SUDO.md](docs/TUTORIAL_SUDO.md) — Per-function privilege escalation
 - [TUTORIAL_MIGRATION.md](docs/TUTORIAL_MIGRATION.md) — export/import: the signed pair that moves the database
 - [TUTORIAL_TROUBLESHOOTING.md](docs/TUTORIAL_TROUBLESHOOTING.md) — `vpn-switch validate` and beyond

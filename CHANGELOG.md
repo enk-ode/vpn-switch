@@ -6,6 +6,12 @@ All notable changes to vpn-switch are documented here. The format is based on
 
 ## [Unreleased] — towards 1.0.0
 
+- The credentials file of OpenVPN documented end to end: the pin
+  `VPN_SWITCH_CREDENTIALS_openvpn` in the manual's ENVIRONMENT and EXAMPLES,
+  `@env` on `openvpn start` and `openvpn patch`, and a tutorial
+  (TUTORIAL_OPENVPN.md): the two-line file outside the database, what a
+  session keeps (the path), rotation when the provider reissues the VPN
+  credentials, and that no export carries the file.
 - `import` into a database that is not there makes it: the dump names its
   profile (new header line `# Profile:`), its signature is verified against
   the keyring the dump's own `openpgp add` record names (an absolute

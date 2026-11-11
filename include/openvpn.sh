@@ -31,6 +31,8 @@ __openvpn_start0() {
 # @returns connect commands (run under the connect interpreter)
 # @example vpn-switch openvpn start work
 # @example vpn-switch openvpn start
+# @env     VPN_SWITCH_CREDENTIALS_openvpn  a bare auth-user-pass line in the config is patched to name this file (two lines, username and password, mode 0600, outside the database); unset, openvpn prompts
+# @see     openvpn patch
 # @see     openvpn stop
 # @see     session save
 #@end
@@ -535,6 +537,8 @@ EOF
 # @param   config  config to preview
 # @returns the patched configuration
 # @example vpn-switch openvpn patch us-server.ovpn
+# @env     VPN_SWITCH_CREDENTIALS_openvpn  the file a bare auth-user-pass line is patched to name; a line that already names a file is left alone
+# @see     openvpn start
 #@end
 _openvpn_patch1() {
   local config_name="$1"
@@ -587,50 +591,31 @@ ___openvpn_inspect0() {
 }
 
 #@help _openvpn_enumerate0
-# @internal OpenVPN enumeration helper
+# @internal OpenVPN enumeration helper: the process table is read at generation time, the report is emitted as comment lines, one block per openvpn process (managed by this instance, by another instance, or not by vpn-switch)
 #@end
 _openvpn_enumerate0() {
-  local base_real
+  local base_real ps_output line pid cmd config session_id other_base
   base_real=$(cd "$VPN_SWITCH_BASE" 2>/dev/null && pwd -P)
-  # Process Table Analysis - enumerate running OpenVPN processes
-  # Generates shell code that examines process table at execution time
-
-  cat <<EOF
-ps_output=\$(ps auxww 2>>"$LOG_FILE" | awk '{ c = \$11; sub(".*/", "", c); if (c == "openvpn") print }' || true)
-
-if [ -z "\$ps_output" ]; then
-  echo "# No openvpn processes found"
-  exit 0
-fi
-
-echo "\$ps_output" | while IFS= read -r line; do
-  pid=\$(echo "\$line" | awk '{print \$2}')
-  cmd=\$(echo "\$line" | awk '{for(i=11;i<=NF;i++) printf "%s ", \$i; print ""}')
-  config=\$(echo "\$cmd" | sed -n 's/.*--config[[:space:]]*\([^[:space:]]*\).*/\1/p')
-
-  if [ -z "\$config" ]; then
-    config='(inline configuration)'
+  ps_output=$(ps auxww 2>>"$LOG_FILE" | awk '{ c = $11; sub(".*/", "", c); if (c == "openvpn") print }' || true)
+  if [ -z "$ps_output" ]; then
+    echo "# No openvpn processes found"
+    return 0
   fi
-
-  if echo "\$config" | grep -q "^$VPN_SWITCH_BASE/.session/\|^$base_real/.session/"; then
-    session_id=\$(echo "\$config" | sed "s|^$VPN_SWITCH_BASE/.session/||; s|^$base_real/.session/||; s|/.*||")
-    echo "#"
-    echo "# ✓ openvpn (PID \$pid) [managed by this instance]"
-    echo "#   Config: \$config"
-    echo "#   Session: \$session_id"
-  elif echo "\$config" | grep -q '/.session/'; then
-    other_base=\$(echo "\$config" | sed 's|\(.*\)/.session/.*|\1|')
-    echo "#"
-    echo "# ⚠ openvpn (PID \$pid) [different vpn-switch instance]"
-    echo "#   Config: \$config"
-    echo "#   Instance: \$other_base"
-  else
-    echo "#"
-    echo "# ⚠ openvpn (PID \$pid) [NOT managed by vpn-switch]"
-    echo "#   Config: \$config"
-  fi
-done
-EOF
+  printf '%s\n' "$ps_output" | while IFS= read -r line; do
+    pid=$(echo "$line" | awk '{print $2}')
+    cmd=$(echo "$line" | awk '{for(i=11;i<=NF;i++) printf "%s ", $i; print ""}')
+    config=$(echo "$cmd" | sed -n 's/.*--config[[:space:]]*\([^[:space:]]*\).*/\1/p')
+    [ -n "$config" ] || config='(inline configuration)'
+    if echo "$config" | grep -q "^$VPN_SWITCH_BASE/.session/\|^$base_real/.session/"; then
+      session_id=$(echo "$config" | sed "s|^$VPN_SWITCH_BASE/.session/||; s|^$base_real/.session/||; s|/.*||")
+      printf '%s\n' "#" "# ✓ openvpn (PID $pid) [managed by this instance]" "#   Config: $config" "#   Session: $session_id"
+    elif echo "$config" | grep -q '/.session/'; then
+      other_base=$(echo "$config" | sed 's|\(.*\)/.session/.*|\1|')
+      printf '%s\n' "#" "# ⚠ openvpn (PID $pid) [different vpn-switch instance]" "#   Config: $config" "#   Instance: $other_base"
+    else
+      printf '%s\n' "#" "# ⚠ openvpn (PID $pid) [NOT managed by vpn-switch]" "#   Config: $config"
+    fi
+  done
 }
 
 #@help _openvpn_import1

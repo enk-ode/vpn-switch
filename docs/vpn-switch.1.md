@@ -450,6 +450,18 @@ Inspect current state and check health.
 **VPN_SWITCH_INTERFACE_wireguard**, **VPN_SWITCH_INTERFACE_openvpn**
 :   Interface names for each protocol. Defaults: **wg0** and **tun0**.
 
+**VPN_SWITCH_CREDENTIALS_openvpn**
+:   Absolute path of a file with two lines, username then password, mode
+    0600, kept outside the database (vpn-switch never writes it, and no
+    export carries it). At connect time a bare **auth-user-pass** line in an
+    OpenVPN config is patched to name this file; a line that already names
+    a file is left alone. Unset, **openvpn** prompts on the terminal, which
+    an rc service or a timer cannot answer. A session keeps only the path,
+    so when the provider's VPN credentials change (they are usually not the
+    account password: Proton issues a separate OpenVPN/IKEv2 username and
+    password), rewrite the file and reconnect. Default: (empty).
+    See **TUTORIAL_OPENVPN.md**.
+
 **VPN_SWITCH_KEEPALIVE_wireguard**
 :   PersistentKeepalive (seconds) injected into patched WireGuard configs
     that do not set one themselves; an explicit value in the config always
@@ -523,6 +535,15 @@ Import a config, group it, and connect:
     vpn-switch wireguard add privacy wg-CH-12 switzerland
     vpn-switch start switzerland
 
+Connect with OpenVPN to a provider that asks for a username and password:
+
+    printf '%s\n' 'alice+pmp' 'the-vpn-password' > ~/.vpn-switch/credentials.txt
+    chmod 0600 ~/.vpn-switch/credentials.txt
+    vpn-switch setenv VPN_SWITCH_CREDENTIALS_openvpn ~/.vpn-switch/credentials.txt
+    vpn-switch openvpn import ~/Downloads/provider-ch-12.ovpn
+    vpn-switch openvpn patch provider-ch-12     # auth-user-pass now names the file
+    vpn-switch openvpn start provider-ch-12
+
 Save the live session by name, then resume later:
 
     vpn-switch session save work
@@ -544,7 +565,7 @@ After upgrading vpn-switch source, refresh the database:
 # SEE ALSO
 
 **INSTALL.md**(7), **TUTORIAL_QUICKSTART.md**(7),
-**TUTORIAL_SESSIONS.md**(7), **TUTORIAL_SUDO.md**(7),
+**TUTORIAL_SESSIONS.md**(7), **TUTORIAL_OPENVPN.md**(7), **TUTORIAL_SUDO.md**(7),
 **TUTORIAL_MIGRATION.md**(7), **TUTORIAL_TROUBLESHOOTING.md**(7),
 **ARCHITECTURE.md**(7), **DEBUGGING_GUIDE.md**(7)
 

@@ -624,6 +624,22 @@ integration).
 Interface names for each protocol.
 Defaults: \f[B]wg0\f[R] and \f[B]tun0\f[R].
 .TP
+\f[B]VPN_SWITCH_CREDENTIALS_openvpn\f[R]
+Absolute path of a file with two lines, username then password, mode
+0600, kept outside the database (vpn\-switch never writes it, and no
+export carries it).
+At connect time a bare \f[B]auth\-user\-pass\f[R] line in an OpenVPN
+config is patched to name this file; a line that already names a file is
+left alone.
+Unset, \f[B]openvpn\f[R] prompts on the terminal, which an rc service or
+a timer cannot answer.
+A session keeps only the path, so when the provider\(cqs VPN credentials
+change (they are usually not the account password: Proton issues a
+separate OpenVPN/IKEv2 username and password), rewrite the file and
+reconnect.
+Default: (empty).
+See \f[B]TUTORIAL_OPENVPN.md\f[R].
+.TP
 \f[B]VPN_SWITCH_KEEPALIVE_wireguard\f[R]
 PersistentKeepalive (seconds) injected into patched WireGuard configs
 that do not set one themselves; an explicit value in the config always
@@ -707,6 +723,18 @@ vpn\-switch wireguard add privacy wg\-CH\-12 switzerland
 vpn\-switch start switzerland
 .EE
 .PP
+Connect with OpenVPN to a provider that asks for a username and
+password:
+.IP
+.EX
+printf \(aq%s\(rsn\(aq \(aqalice+pmp\(aq \(aqthe\-vpn\-password\(aq > \(ti/.vpn\-switch/credentials.txt
+chmod 0600 \(ti/.vpn\-switch/credentials.txt
+vpn\-switch setenv VPN_SWITCH_CREDENTIALS_openvpn \(ti/.vpn\-switch/credentials.txt
+vpn\-switch openvpn import \(ti/Downloads/provider\-ch\-12.ovpn
+vpn\-switch openvpn patch provider\-ch\-12     # auth\-user\-pass now names the file
+vpn\-switch openvpn start provider\-ch\-12
+.EE
+.PP
 Save the live session by name, then resume later:
 .IP
 .EX
@@ -732,8 +760,8 @@ vpn\-switch version
 .EE
 .SH SEE ALSO
 \f[B]INSTALL.md\f[R](7), \f[B]TUTORIAL_QUICKSTART.md\f[R](7),
-\f[B]TUTORIAL_SESSIONS.md\f[R](7), \f[B]TUTORIAL_SUDO.md\f[R](7),
-\f[B]TUTORIAL_MIGRATION.md\f[R](7),
+\f[B]TUTORIAL_SESSIONS.md\f[R](7), \f[B]TUTORIAL_OPENVPN.md\f[R](7),
+\f[B]TUTORIAL_SUDO.md\f[R](7), \f[B]TUTORIAL_MIGRATION.md\f[R](7),
 \f[B]TUTORIAL_TROUBLESHOOTING.md\f[R](7), \f[B]ARCHITECTURE.md\f[R](7),
 \f[B]DEBUGGING_GUIDE.md\f[R](7)
 .PP

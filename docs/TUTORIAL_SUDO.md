@@ -105,9 +105,13 @@ These read kernel state that's only visible to root on most systems:
 ```bash
 vpn-switch setenv VPN_SWITCH_INTERPRETER_status0             'sudo sh'
 vpn-switch setenv VPN_SWITCH_INTERPRETER_phases_inspect0     'sudo sh'
-vpn-switch setenv VPN_SWITCH_INTERPRETER_wireguard_enumerate0 'sudo sh | cut -b3-'
-vpn-switch setenv VPN_SWITCH_INTERPRETER_openvpn_enumerate0   'sudo sh | cut -b3-'
 ```
+
+The enumerate commands (`openvpn enumerate`, `wireguard enumerate`) are not in
+this list: they read the process table while generating and print their
+report as comment lines, so their interpreter is `cut -b3-` and nothing runs
+as root. On a system that hides other users' processes from ps, run the whole
+command as root.
 
 Note: `status0` ships with the default `sh` interpreter — set it to `sudo sh`
 only if you want root-only details. Without sudo, `status`/`inspect` still run

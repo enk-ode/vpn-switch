@@ -1102,9 +1102,7 @@ if [ -d "$VPN_SWITCH_TEMPLATE_DIR/environment" ]; then
   $MODIFY_DIR_CREATE "$base/.env/default"
   $MODIFY_FILE_PERMS 0700 "$base/.env/default"
   $MODIFY_FILE_COPY_FORCE "$VPN_SWITCH_TEMPLATE_DIR/environment/"* "$base/.env/default/"
-  for f in "$base/.env/default"/*; do
-    [ -f "\$f" ] && $MODIFY_FILE_PERMS 0600 "\$f"
-  done
+  $MODIFY_FILE_PERMS 0600 "$base/.env/default/"*
   echo "# Synced env defaults from: $VPN_SWITCH_TEMPLATE_DIR/environment/"
   # Invalidate a live env cache: build_env_args reads the cache file verbatim
   # and never re-scans, so freshly synced defaults stay invisible until the

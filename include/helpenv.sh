@@ -15,13 +15,15 @@
 #
 #   <name> resolves by cascade: literal -> VPN_SWITCH_<name> -> VPN_SWITCH_INTERPRETER_<name>
 #
-# Interpreter sugar. The <fn> token is resolved by _intp_var: the three class
-# defaults (terminal | combinator | batch[_combinator], any case) map to
-# VPN_SWITCH_<CLASS>_INTERPRETER; anything else is a per-function override named
-# VPN_SWITCH_INTERPRETER_<fn> (the <fn> carries its arity digit, e.g. helpenv0).
-#   setintp  <fn> <value>         = setenv  <resolved> <value>
-#   getintp  <fn>                 = getenv  <resolved>
-#   helpintp <fn> [location]      = helpenv <resolved> [location]
+# Interpreter sugar. The <fn> token is a function name (with or without its
+# arity digit), the variable its pin VPN_SWITCH_INTERPRETER_<fn>; nothing else.
+# The class defaults (VPN_SWITCH_TERMINAL_INTERPRETER,
+# VPN_SWITCH_COMBINATOR_INTERPRETER, VPN_SWITCH_BATCH_COMBINATOR_INTERPRETER)
+# are set with setenv by their own name.
+#   setintp   <fn> <value>        = setenv   VPN_SWITCH_INTERPRETER_<fn> <value>
+#   getintp   <fn>                = getenv   VPN_SWITCH_INTERPRETER_<fn>
+#   unsetintp <fn>                = unsetenv VPN_SWITCH_INTERPRETER_<fn>
+#   helpintp  <fn> [location]     = helpenv  VPN_SWITCH_INTERPRETER_<fn> [location]
 
 #@help _helpenv0
 # @command helpenv [<name> [<location>]]
@@ -110,68 +112,65 @@ _helpenv2() {
     }'
 }
 
-# _intp_var - resolve an interpreter token to its full env-var name.
-# Class defaults (terminal | combinator | batch | batch_combinator, any case)
-# map to VPN_SWITCH_<CLASS>_INTERPRETER; everything else is a per-function
-# override named VPN_SWITCH_INTERPRETER_<fn>. Plain helper (no trailing arity
-# digit, no @help) so it is not classified as a dispatchable command.
-_intp_var() {
-  case "$(printf '%s' "$1" | tr 'A-Z' 'a-z')" in
-    terminal)               echo "VPN_SWITCH_TERMINAL_INTERPRETER" ;;
-    combinator)             echo "VPN_SWITCH_COMBINATOR_INTERPRETER" ;;
-    batch|batch_combinator) echo "VPN_SWITCH_BATCH_COMBINATOR_INTERPRETER" ;;
-    *)                      echo "VPN_SWITCH_INTERPRETER_$1" ;;
-  esac
-}
-
 #@help __setintp2
 # @command setintp <fn> <value>
-# @summary Set an interpreter (shortcut for setenv of the resolved interpreter var)
+# @summary Pin a function's interpreter: setenv VPN_SWITCH_INTERPRETER_<fn> <value> -- sugar for the pin's name, nothing more; a class default is set with setenv by its own name
 # @group configuration
-# @param fn     class default (terminal|combinator|batch) or function name (e.g. wireguard_start0)
+# @param fn     function name, with or without its arity digit (e.g. wireguard_start0)
 # @param value  interpreter command
-# @example vpn-switch setintp terminal 'cut -b3- | sh'
 # @example vpn-switch setintp wireguard_start0 'sudo sh'
 # @see getintp
+# @see unsetintp
 # @see setenv
 #@end
 __setintp2() {
   local fn="$1" val="$2" q
   q=$(printf '%s\n' "$val" | sed "s/'/'\\\\''/g; s/^/'/; s/\$/'/")
-  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" setenv $(_intp_var "$fn") $q"
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" setenv VPN_SWITCH_INTERPRETER_$fn $q"
 }
 
 #@help __getintp1
 # @command getintp <fn>
-# @summary Show an interpreter (shortcut for getenv of the resolved interpreter var)
+# @summary Show a function's pinned interpreter: getenv VPN_SWITCH_INTERPRETER_<fn>
 # @group configuration
-# @param fn  class default (terminal|combinator|batch) or function name (e.g. wireguard_start0)
-# @example vpn-switch getintp terminal
+# @param fn  function name, with or without its arity digit (e.g. wireguard_start0)
 # @example vpn-switch getintp wireguard_start0
 # @see setintp
 #@end
 __getintp1() {
-  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" getenv $(_intp_var "$1")"
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" getenv VPN_SWITCH_INTERPRETER_$1"
+}
+
+#@help __unsetintp1
+# @command unsetintp <fn>
+# @summary Drop a function's local interpreter pin: unsetenv VPN_SWITCH_INTERPRETER_<fn>; the default of the profile applies again
+# @group configuration
+# @param fn  function name, with or without its arity digit (e.g. wireguard_start0)
+# @example vpn-switch unsetintp wireguard_start0
+# @see setintp
+# @see unsetenv
+#@end
+__unsetintp1() {
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" unsetenv VPN_SWITCH_INTERPRETER_$1"
 }
 
 #@help __helpintp1
 # @command helpintp <fn> [<location>]
-# @summary Show docs for an interpreter variable (class default or per-function)
+# @summary Show the documentation of a function's interpreter pin: helpenv VPN_SWITCH_INTERPRETER_<fn>
 # @group configuration
-# @param fn        class default (terminal|combinator|batch) or function name (e.g. wireguard_start0)
+# @param fn        function name, with or without its arity digit (e.g. wireguard_start0)
 # @param location  optional layer to inspect: local | default | template
-# @example vpn-switch helpintp terminal
 # @example vpn-switch helpintp helpenv0 template
 # @see helpenv
 # @see setintp
 #@end
 __helpintp1() {
-  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" helpenv $(_intp_var "$1")"
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" helpenv VPN_SWITCH_INTERPRETER_$1"
 }
 
 #@help __helpintp2
 # @internal arity-2 of 'helpintp' (forced layer)
 #@end
 __helpintp2() {
-  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" helpenv $(_intp_var "$1") $2"
+  echo "\"\$VPN_SWITCH_CONTEXT_SCRIPT\" helpenv VPN_SWITCH_INTERPRETER_$1 $2"
 }

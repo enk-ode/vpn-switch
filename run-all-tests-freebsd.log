@@ -1,0 +1,23 @@
+# vpn-switch — run-all-tests (freebsd) — 2026-06-25
+
+Test Results Summary - Thu Jun 25 18:10:21 CEST 2026
+================================================================================
+
+Status | Platform | Test Suite                          | Profile | Tests | Assert | Passed | Failed
+-------|----------|-------------------------------------|---------|-------|--------|--------|-------
+PASS   | FreeBSD  | vpn-switch-unit-test.sh             | minimal |   156 |    395 |    395 |      0
+PASS   | FreeBSD  | vpn-switch-unit-test.sh             | all     |   156 |    395 |    395 |      0
+PASS   | FreeBSD  | vpn-switch-ownership-test.sh        | minimal |     2 |     10 |     10 |      0
+PASS   | FreeBSD  | vpn-switch-ownership-test.sh        | all     |     2 |     10 |     10 |      0
+PASS   | FreeBSD  | vpn-switch-integration-test.sh      | minimal |    14 |    323 |    323 |      0
+PASS   | FreeBSD  | vpn-switch-integration-test.sh      | all     |    14 |    323 |    323 |      0
+PASS   | FreeBSD  | vpn-switch-architecture-test.sh     | minimal |   263 |    459 |    459 |      0
+PASS   | FreeBSD  | vpn-switch-architecture-test.sh     | all     |   263 |    459 |    459 |      0
+================================================================================
+
+ALL TESTS PASSED
+
+Total: 870 tests, 2374 assertions (2374 passed, 0 failed)
+
+Detailed logs saved to: /tmp/vpn-switch-test-results-20260625-062755
+

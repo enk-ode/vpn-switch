@@ -483,60 +483,36 @@ ___wireguard_inspect0() {
 }
 
 #@help _wireguard_enumerate0
-# @internal WireGuard enumeration helper
+# @internal WireGuard enumeration helper: the process table and .session/*/interface are read at generation time, the report is emitted as comment lines, one block per wg-quick process (managed by this instance, by another instance, or not by vpn-switch, then with the interface conflicts against our sessions)
 #@end
 _wireguard_enumerate0() {
-  local base_real
+  local base_real ps_output line pid cmd config session_id other_base interface session_dir our_interface
   base_real=$(cd "$VPN_SWITCH_BASE" 2>/dev/null && pwd -P)
-  # Process Table Analysis - enumerate running WireGuard processes
-  # Generates shell code that examines process table at execution time
-
-  cat <<EOF
-ps_output=\$(ps auxww 2>>"$LOG_FILE" | awk '{ c = \$11; sub(".*/", "", c); if (c == "wg-quick") print }' || true)
-
-if [ -z "\$ps_output" ]; then
-  echo "# No wg-quick processes found"
-  exit 0
-fi
-
-echo "\$ps_output" | while IFS= read -r line; do
-  pid=\$(echo "\$line" | awk '{print \$2}')
-  cmd=\$(echo "\$line" | awk '{for(i=11;i<=NF;i++) printf "%s ", \$i; print ""}')
-  config=\$(echo "\$cmd" | sed -n 's/.*wg-quick[[:space:]]*up[[:space:]]*\([^[:space:]]*\).*/\1/p')
-
-  if echo "\$config" | grep -q "^$VPN_SWITCH_BASE/.session/\|^$base_real/.session/"; then
-    session_id=\$(echo "\$config" | sed "s|^$VPN_SWITCH_BASE/.session/||; s|^$base_real/.session/||; s|/.*||")
-    interface=\$(basename "\$config" .conf 2>>"$LOG_FILE" || echo 'unknown')
-    echo "#"
-    echo "# ✓ wg-quick (PID \$pid) [managed by this instance]"
-    echo "#   Config: \$config"
-    echo "#   Session: \$session_id"
-    echo "#   Interface: \$interface"
-  elif echo "\$config" | grep -q '/.session/'; then
-    other_base=\$(echo "\$config" | sed 's|\(.*\)/.session/.*|\1|')
-    interface=\$(basename "\$config" .conf 2>>"$LOG_FILE" || echo 'unknown')
-    echo "#"
-    echo "# ⚠ wg-quick (PID \$pid) [different vpn-switch instance]"
-    echo "#   Config: \$config"
-    echo "#   Instance: \$other_base"
-    echo "#   Interface: \$interface"
-  else
-    interface=\$(basename "\$config" .conf 2>>"$LOG_FILE" || echo 'unknown')
-    echo "#"
-    echo "# ⚠ wg-quick (PID \$pid) [NOT managed by vpn-switch]"
-    echo "#   Config: \$config"
-    echo "#   Interface: \$interface"
-    for session_dir in "$VPN_SWITCH_BASE/.session"/*; do
-      [ -d "\$session_dir" ] || continue
-      our_interface=\$(cat "\$session_dir/interface" 2>>"$LOG_FILE" || true)
-      if [ "\$our_interface" = "\$interface" ]; then
-        our_session=\$(basename "\$session_dir")
-        echo "#   ⚠ WARNING: Interface conflict with our session \$our_session!"
-      fi
-    done
+  ps_output=$(ps auxww 2>>"$LOG_FILE" | awk '{ c = $11; sub(".*/", "", c); if (c == "wg-quick") print }' || true)
+  if [ -z "$ps_output" ]; then
+    echo "# No wg-quick processes found"
+    return 0
   fi
-done
-EOF
+  printf '%s\n' "$ps_output" | while IFS= read -r line; do
+    pid=$(echo "$line" | awk '{print $2}')
+    cmd=$(echo "$line" | awk '{for(i=11;i<=NF;i++) printf "%s ", $i; print ""}')
+    config=$(echo "$cmd" | sed -n 's/.*wg-quick[[:space:]]*up[[:space:]]*\([^[:space:]]*\).*/\1/p')
+    interface=$(basename "$config" .conf 2>>"$LOG_FILE" || echo 'unknown')
+    if echo "$config" | grep -q "^$VPN_SWITCH_BASE/.session/\|^$base_real/.session/"; then
+      session_id=$(echo "$config" | sed "s|^$VPN_SWITCH_BASE/.session/||; s|^$base_real/.session/||; s|/.*||")
+      printf '%s\n' "#" "# ✓ wg-quick (PID $pid) [managed by this instance]" "#   Config: $config" "#   Session: $session_id" "#   Interface: $interface"
+    elif echo "$config" | grep -q '/.session/'; then
+      other_base=$(echo "$config" | sed 's|\(.*\)/.session/.*|\1|')
+      printf '%s\n' "#" "# ⚠ wg-quick (PID $pid) [different vpn-switch instance]" "#   Config: $config" "#   Instance: $other_base" "#   Interface: $interface"
+    else
+      printf '%s\n' "#" "# ⚠ wg-quick (PID $pid) [NOT managed by vpn-switch]" "#   Config: $config" "#   Interface: $interface"
+      for session_dir in "$VPN_SWITCH_BASE/.session"/*; do
+        [ -d "$session_dir" ] || continue
+        our_interface=$(cat "$session_dir/interface" 2>>"$LOG_FILE" || true)
+        [ "$our_interface" = "$interface" ] && echo "#   ⚠ WARNING: Interface conflict with our session $(basename "$session_dir")!"
+      done
+    fi
+  done
 }
 
 #@help ___wireguard_stop0

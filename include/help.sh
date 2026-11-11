@@ -970,7 +970,6 @@ complete_values() {
         [ -d "$base/.env/local" ]   && ls "$base/.env/local" 2>/dev/null
       } | grep -v '^VPN_SWITCH_PROFILE_' ;;
     interpreter-fn)
-      printf '%s\n' terminal combinator batch
       for f in $ANCHOR_FUNCTIONS; do
         f=${f#___}; f=${f#__}; f=${f#_}
         printf '%s\n' "$f" "${f%[0-9]}"
