@@ -1041,3 +1041,24 @@ _complete6() {
   complete_words "$@"
 }
 
+#@help _complete7
+# @internal arity-7 sibling of 'complete' (one word beyond the longest usage: a line too long to complete gets no candidate)
+#@end
+_complete7() {
+  complete_words "$@"
+}
+
+#@help _complete8
+# @internal arity-8 sibling of 'complete'
+#@end
+_complete8() {
+  complete_words "$@"
+}
+
+#@help _complete9
+# @internal arity-9 sibling of 'complete'
+#@end
+_complete9() {
+  complete_words "$@"
+}
+

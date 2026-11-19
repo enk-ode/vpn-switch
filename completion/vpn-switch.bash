@@ -12,7 +12,8 @@
 #   . completion/vpn-switch.bash                                 (ad hoc)
 #
 # Protocol: one candidate per line; the lines "@files" and "@dirs" ask the
-# shell to complete paths itself.
+# shell to complete paths itself. A line with spaces is never a candidate
+# (a usage error for a line too long to complete) and is dropped.
 
 _vpn_switch_complete() {
     local line
@@ -22,7 +23,7 @@ _vpn_switch_complete() {
         case $line in
             @files) compopt -o default 2>/dev/null ;;
             @dirs)  compopt -o dirnames 2>/dev/null ;;
-            '')     ;;
+            ''|*' '*) ;;
             *)      COMPREPLY+=("$line") ;;
         esac
     done < <(vpn-switch complete "${words[@]}" 2>/dev/null)

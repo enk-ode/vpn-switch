@@ -35,6 +35,13 @@ If you do send a PR:
 - User-facing commands carry an in-source `#@help` doc-block; see
   [docs/HELP_TEMPLATE_SPEC.md](docs/HELP_TEMPLATE_SPEC.md). The architecture
   tests fail if a command is missing or malformed.
+- The unit tests change the sandbox database only through the API: a pin
+  with `setintp`/`unsetintp`, a variable with `setenv`/`unsetenv`, a record
+  with the command that owns it. Nothing in a test writes into `.env/local`
+  or the records by hand. The one exception is what no API can produce: a
+  database broken on purpose (the scan tests), a default of the profile
+  taken away (`.env/default` has no remove command), engine scratch made
+  with the engine helper itself.
 
 ## Code of conduct
 
