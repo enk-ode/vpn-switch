@@ -1,0 +1,3 @@
+# publish-sync.sh: one extended regex per line; "path:<regex>" matches tracked file names.
+# Working notes that never reach the public branch.
+path:(^|/)FP_SIGNATURES
