@@ -1052,6 +1052,15 @@ consume_with_exit() {
 #   - Increments global pointer in .tmp/batch-counter (modulo 64)
 #   - Uses .tmp/batch-exits/ directory (created by init)
 #
+# owner_keep <path>... -- what a run as another user (root under sudo) has
+# just created in the database belongs to the owner of the database's .tmp
+# again; a run as that owner does nothing
+owner_keep() {
+	local o
+	o=$($EXAMINE_FILE_OWNER "$VPN_SWITCH_BASE/.tmp" 2>/dev/null) || return 0
+	test "${o%%:*}" = "$(id -u)" || $MODIFY_FILE_OWNER "$o" "$@" 2>>"$LOG_FILE" || true
+}
+
 get_batch_id() {
 	local counter_file="$VPN_SWITCH_BASE/.tmp/batch-counter"
 	local batch_dir="$VPN_SWITCH_BASE/.tmp/batch-exits"
@@ -1066,7 +1075,9 @@ get_batch_id() {
 
 	# Calculate next position (circular)
 	local next_id=$(( (batch_id + 1) % 64 ))
+	$MODIFY_FILE_REMOVE "$counter_file" 2>>"$LOG_FILE"
 	echo "$next_id" > "$counter_file" 2>>"$LOG_FILE"
+	owner_keep "$counter_file"
 
 	# Return current position (caller will overwrite this batch file)
 	echo "$batch_id"

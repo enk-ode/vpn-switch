@@ -287,6 +287,7 @@ process_arguments dump
       "$VPN_SWITCH_CONTEXT_SCRIPT" wireguard dump
       "$VPN_SWITCH_CONTEXT_SCRIPT" session dump
   → batch interpreter writes them to .tmp/batch.XXXXXX, runs: batch <tmp> true
+  → the runner moves the file to its ring slot .tmp/batch.<slot> (kept only after a failure)
   → _batch2 reads the file line by line, skips #/blank, validates the
     "$VPN_SWITCH_CONTEXT_SCRIPT" prefix, and dispatches each line via
     process_arguments() — which may itself resolve to another batch combinator.

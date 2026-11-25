@@ -20,7 +20,9 @@ The **encoding + propagation** half of this design is implemented and in use; th
   `VPN_SWITCH_CONTEXT_EXIT_BITS`. The regular (0–127) case packs one level as
   `(p<<1)|c`; EXIT_BITS carries the readable structure (`p.c`, or `children . c`).
 - Batch storage: the live writer is **`_batch2()` in `include/database.sh`**,
-  which truncates `.tmp/batch-exits/<id>` and appends one line per child in the
+  which replaces `.tmp/batch-exits/<id>` (removed and created anew, so the
+  owner of the old file does not matter), moves the lines a batch combinator
+  handed over to `.tmp/batch.<id>` in the same ring, and appends one line per child in the
   `EXIT_CODE|function args|BATCH_REF` format of §4 (what `combine_exit_codes`
   reads back). `get_batch_id()` allocates ids via a circular **mod-64** counter
   (`.tmp/batch-counter`).

@@ -7396,6 +7396,40 @@ test_environment_scan_ignores_stray_files() {
   fi
 }
 
+test_batch_ring() {
+  test_header "batch ring: the lines of a batch combinator live in the 64 slots, whoever owned the slot before"
+  test_setup
+  local files slots n ok
+  run_vpn_switch environment refresh > /dev/null
+  if [ -z "$(ls "$TEST_DIR/.tmp" | grep '^batch\.')" ]; then
+    pass "a batch without a failure leaves no file of its lines"
+  else
+    fail "left behind: $(ls "$TEST_DIR/.tmp" | grep '^batch\.' | tr '\n' ' ')"
+  fi
+  run_vpn_switch manifest match /nonexistent/a /nonexistent/b > /dev/null || true
+  run_vpn_switch manifest match /nonexistent/a /nonexistent/b > /dev/null || true
+  files=$(ls "$TEST_DIR/.tmp" | grep '^batch\.' || true)
+  slots=$(printf '%s\n' "$files" | grep -c '^batch\.[0-9][0-9]*$' || true)
+  ok=1
+  for n in $(printf '%s\n' "$files" | sed -n 's/^batch\.\([0-9][0-9]*\)$/\1/p'); do
+    [ "$n" -lt 64 ] && [ -f "$TEST_DIR/.tmp/batch-exits/$n" ] || ok=0
+  done
+  if [ "$slots" = 2 ] && [ "$(printf '%s\n' "$files" | grep -c .)" = 2 ] && [ "$ok" = 1 ]; then
+    pass "two failed batches keep their lines as batch.<slot> beside batch-exits/<slot>, nothing else"
+  else
+    fail "files: $(printf '%s' "$files" | tr '\n' ' ')"
+  fi
+  chmod 0400 "$TEST_DIR/.tmp/batch-counter" "$TEST_DIR"/.tmp/batch-exits/* "$TEST_DIR"/.tmp/batch.*
+  n=0
+  while [ "$n" -lt 70 ]; do run_vpn_switch manifest match /nonexistent/a /nonexistent/b > /dev/null || true; n=$((n + 1)); done
+  files=$(ls "$TEST_DIR/.tmp" | grep '^batch\.' || true)
+  if [ "$(printf '%s\n' "$files" | grep -c .)" = 64 ] && [ "$(printf '%s\n' "$files" | grep -vc '^batch\.[0-9][0-9]*$')" = 0 ] && [ "$(ls "$TEST_DIR/.tmp/batch-exits" | grep -c .)" = 64 ] && [ -w "$TEST_DIR/.tmp/batch-counter" ]; then
+    pass "seventy more failures come round: 64 files of lines, 64 of exits, slots and counter a run could not write are replaced"
+  else
+    fail "lines $(printf '%s\n' "$files" | grep -c .), exits $(ls "$TEST_DIR/.tmp/batch-exits" | grep -c .), counter $(ls -l "$TEST_DIR/.tmp/batch-counter")"
+  fi
+}
+
 test_batch_pin_governs_next_line() {
   test_header "batch: a pin set by one line governs the next line -- process runner and binary runner"
   test_setup
@@ -7848,6 +7882,7 @@ main() {
   should_run_test test_version_command_unstamped
   should_run_test test_environment_scan_ignores_stray_files
   should_run_test test_batch_pin_governs_next_line
+  should_run_test test_batch_ring
   should_run_test test_binary_runs_in_one_process
 
   # Print summary

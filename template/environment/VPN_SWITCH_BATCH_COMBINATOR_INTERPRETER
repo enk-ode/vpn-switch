@@ -7,7 +7,11 @@ sh -c 'tmp=$(mktemp "$VPN_SWITCH_BASE/.tmp/batch.XXXXXX"); chmod 0600 "$tmp"; ca
 # 1. Creates secure temp file in $VPN_SWITCH_BASE/.tmp/
 # 2. Reads stdin (command lines from batch-combinator) into temp file
 # 3. Invokes 'batch <tempfile> true' to process commands
-# 4. Cleanup flag 'true' ensures temp file is removed after processing
+# 4. Flag 'true' says the file is the interpreter's own. The runner moves the file into its slot of the batch ring
+# (.tmp/batch.<slot>, 64 slots beside .tmp/batch-exits/<slot>), gives it to the
+# owner of the database's .tmp when it runs as another user, removes it after a
+# run without a failure and keeps it after a failed one until the slot comes
+# round.
 #
 # Note: .tmp/ directory is created by 'vpn-switch init' with proper permissions (0700)
 #
